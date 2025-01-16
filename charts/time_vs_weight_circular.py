@@ -1,36 +1,36 @@
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
-def create_time_vs_weight_circular(df: pd.DataFrame) -> go.Figure:
+def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     """
-    Create two circular histograms (polar plots) for AM (0-11.999 hours) and PM (12-23.999 hours),
-    showing how many lifts occurred at each time bin.
-    
-    On hover, display a mini histogram-like 'popout' (ASCII style) of the 1D distribution
-    of weight lifted during that time bin.
-    
-    Assumptions:
-      - The DataFrame has a 'Time' column in military float (e.g., 1436.0)
-        or string that can be converted similarly (e.g., '1436.0').
-      - A 'Top Set Weight' column (or fallback to 'Average Weight') for the weight data.
-      - A 'DecimalHour' column or we auto-calc it from 'Time'.
+    Creates two radial (polar) plots side by side:
+      - Left: 12 AM -> 11:59 AM (0..12 hours), divided into 48 bins (each bin=15 min).
+      - Right: 12 PM -> 11:59 PM (12..24 hours), also 48 bins of 15 min each.
+
+    Each 15-min bin extends radially based on how many lifts occurred in that quarter-hour.
+
+    We label only on the hour increments (e.g., "12 AM", "1 AM", etc.),
+    although there are four 15-min bins per hour. 
+
+    Key Points:
+      - 'DecimalHour' is in [0..24).
+      - AM subset: [0..12), PM subset: [12..24).
+      - For each subset, 12 hours * 4 bins/hour = 48 bins.
+      - Each bin ~ 7.5° since 360° / 48 = 7.5.
+      - Hour labels appear every 4 bins (one hour).
+      - Both subplots share the same max radial range so you can compare them easily.
     """
 
-    # 1) Identify which weight column to use
-    weight_col = "Top Set Weight"
-    if weight_col not in df.columns:
-        weight_col = "Average Weight"
-        if weight_col not in df.columns:
-            raise ValueError("No valid weight column found (e.g., 'Top Set Weight' or 'Average Weight').")
-
-    # 2) Convert 'Time' -> 'DecimalHour' if not already done
-    def to_decimal_hours(mil_time_str):
-        # Remove any ':'
-        mil_time_str = mil_time_str.replace(":", "")
+    # -------------------------------------------------------------------------
+    # 1) Convert 'Time' -> 'DecimalHour' if not already present
+    # -------------------------------------------------------------------------
+    def to_decimal_hours(mil_time_str: str) -> float:
+        """Convert something like '1436.0' -> 14.6 decimal hours."""
         try:
-            val = int(float(mil_time_str))  # handles '1436.0'
+            s = mil_time_str.replace(":", "")
+            val = int(float(s))  # e.g., '1436.0' -> 1436 -> hh=14, mm=36
             hh = val // 100
             mm = val % 100
             return hh + mm / 60.0
@@ -41,148 +41,171 @@ def create_time_vs_weight_circular(df: pd.DataFrame) -> go.Figure:
         df["Time"] = df["Time"].astype(str)
         df["DecimalHour"] = df["Time"].apply(to_decimal_hours)
 
-    # Drop rows missing time or weight
-    df = df.dropna(subset=["DecimalHour", weight_col])
+    df = df.dropna(subset=["DecimalHour"])
 
-    # 3) Split data into AM (0 <= hour < 12) and PM (12 <= hour < 24)
+    # -------------------------------------------------------------------------
+    # 2) Split into AM (0 <= hr < 12) and PM (12 <= hr < 24)
+    # -------------------------------------------------------------------------
     df_am = df[(df["DecimalHour"] >= 0) & (df["DecimalHour"] < 12)].copy()
     df_pm = df[(df["DecimalHour"] >= 12) & (df["DecimalHour"] < 24)].copy()
 
-    # 4) Convert decimal hours -> angles in degrees, oriented so 12:00 is at angle=0 (top).
-    #    We'll do a clockwise orientation by (angle = (450 - scaled) % 360).
-    #    For AM, we map [0..12) -> [0..360). For PM, similarly but shift by subtracting 12 first.
-    def angle_am(minutes):
-        # AM range is 0..719 minutes -> 0..360 deg
-        raw_angle = (minutes / 720.0) * 360.0
-        return (450.0 - raw_angle) % 360.0
-
-    def angle_pm(minutes):
-        # PM range is 12..23.999 => 720..1439 minutes
-        # Convert to [0..719], then same transform
-        raw_angle = ((minutes - 720.0) / 720.0) * 360.0
-        return (450.0 - raw_angle) % 360.0
-
-    # 4A) Convert decimal hours to total minutes
-    df_am["MinutesFromMidnight"] = (df_am["DecimalHour"] * 60.0).astype(int)
-    df_pm["MinutesFromMidnight"] = (df_pm["DecimalHour"] * 60.0).astype(int)
-
-    # 4B) For each subset, define angles
-    df_am["Angle"] = df_am["MinutesFromMidnight"].apply(angle_am)
-    df_pm["Angle"] = df_pm["MinutesFromMidnight"].apply(angle_pm)
-
-    # 5) Bin the angles in 12 slices (30 deg each) or some resolution
-    bins = np.linspace(0, 360, 13)  # 12 bins
-    am_counts, am_edges = np.histogram(df_am["Angle"], bins=bins)
-    pm_counts, pm_edges = np.histogram(df_pm["Angle"], bins=bins)
-
-    # 5A) Midpoints for bar polar
-    am_centers = 0.5 * (am_edges[:-1] + am_edges[1:])
-    pm_centers = 0.5 * (pm_edges[:-1] + pm_edges[1:])
-
-    # 6) For the 'popout' distribution on hover, we want a mini-hist of weight data
-    #    in ASCII or small text form. We'll create a function that returns
-    #    a quick ASCII bar for each bin in the angle histogram.
-    #    We'll gather weight data in that angle bin and build a small distribution string.
-
-    def mini_weight_hist(bin_df, bin_angle_low, bin_angle_high):
+    # -------------------------------------------------------------------------
+    # 3) Define quarter-hour bins:
+    #    Each 1 hour => 4 bins, e.g. 0.00..0.25 => bin 0, 0.25..0.50 => bin 1, etc.
+    # -------------------------------------------------------------------------
+    def quarter_hour_bin(decimal_hr: float) -> int:
         """
-        For the subset of bin_df where angle is in [bin_angle_low, bin_angle_high),
-        gather 'weight_col' and build a mini distribution in ASCII.
+        Convert a decimal hour (0..12) -> integer bin [0..47].
+        Example: 1.2 hr => 4.8 => bin=4, roughly (1 hour 12 minutes).
         """
-        # Tolerate the case where bin_angle_high < bin_angle_low if edges wrap around 360
-        # We'll normalize angles to [0..360) before comparison.
-        def in_range(angle):
-            if bin_angle_low <= bin_angle_high:
-                return (angle >= bin_angle_low) & (angle < bin_angle_high)
-            else:
-                # wrap around 360
-                return (angle >= bin_angle_low) | (angle < bin_angle_high)
+        return int(decimal_hr * 4)
 
-        subset = bin_df[in_range(bin_df["Angle"])]
+    # For AM, range is [0..12), so bin => [0..48)
+    df_am["QBin"] = df_am["DecimalHour"].apply(quarter_hour_bin)
 
-        if subset.empty:
-            return "No data"
+    # For PM, subtract 12 so it ranges [0..12)
+    def pm_quarter_hour_bin(decimal_hr: float) -> int:
+        """DecimalHour in [12..24) => shift by 12 => [0..12). Then *4 => [0..48)."""
+        return int((decimal_hr - 12.0) * 4)
 
-        # We can do a quick grouping of weight data in 5-lb bins or just show stats
-        # Let's do a simple approach: gather all weight values, round them,
-        # then build a quick bar chart of frequencies (like 3 distinct bars).
-        weights_rounded = subset[weight_col].round(-1)  # Round to nearest 10
-        counts = weights_rounded.value_counts().sort_index()
-        # Build a small ASCII bar chart
-        lines = []
-        for wval, c in counts.items():
-            # e.g. "500 lbs | ****"
-            bar = "*" * int(min(c, 10))  # cap to 10 stars to avoid big text
-            lines.append(f"{int(wval)} lbs | {bar}")
-        return "\n".join(lines)
+    df_pm["QBin"] = df_pm["DecimalHour"].apply(pm_quarter_hour_bin)
 
-    # Build text arrays for am/pm hover
-    am_hover = []
-    for i in range(len(am_centers)):
-        low, high = am_edges[i], am_edges[i+1]
-        # build ASCII plot
-        ascii_plot = mini_weight_hist(df_am, low, high)
-        # e.g. "Angle bin [xx, yy)\n <ASCII bars>"
-        am_hover.append(f"Time bin: {int(low)}° - {int(high)}°\n{ascii_plot}")
+    # -------------------------------------------------------------------------
+    # 4) Count how many lifts per quarter-hour bin for AM and PM
+    # -------------------------------------------------------------------------
+    am_counts = df_am["QBin"].value_counts().sort_index()
+    pm_counts = df_pm["QBin"].value_counts().sort_index()
 
-    pm_hover = []
-    for i in range(len(pm_centers)):
-        low, high = pm_edges[i], pm_edges[i+1]
-        ascii_plot = mini_weight_hist(df_pm, low, high)
-        pm_hover.append(f"Time bin: {int(low)}° - {int(high)}°\n{ascii_plot}")
+    # Fill missing bins with 0 => range 0..47
+    for b in range(48):
+        if b not in am_counts:
+            am_counts.loc[b] = 0
+    am_counts = am_counts.sort_index()
 
-    # 7) Build 2 polar subplots: row=1, col=2
+    for b in range(48):
+        if b not in pm_counts:
+            pm_counts.loc[b] = 0
+    pm_counts = pm_counts.sort_index()
+
+    # Convert to arrays for radial distances
+    am_counts_arr = am_counts.values
+    pm_counts_arr = pm_counts.values
+
+    # -------------------------------------------------------------------------
+    # 5) Calculate angles for each 15-min bin:
+    #    We have 48 bins => each bin = 7.5° => bin i => angle= i * 7.5
+    # -------------------------------------------------------------------------
+    n_bins = 48
+    angle_step = 360.0 / n_bins  # 7.5
+    angles = np.arange(n_bins) * angle_step  # 0, 7.5, 15, ..., 352.5
+
+    # -------------------------------------------------------------------------
+    # 6) Define tickvals/ticktext for hours
+    #    Each hour has 4 quarter-hour bins. The label goes on the first bin.
+    # -------------------------------------------------------------------------
+    # AM hours => 0..11
+    am_tickvals = []
+    am_ticktext = []
+    for hour in range(12):  # 0..11
+        # The bin index for hour 'hour' is hour*4
+        bin_index = hour * 4
+        am_tickvals.append(bin_index * angle_step)
+        # Format label => 12 AM if hour=0, else 1 AM..11 AM
+        label = "12 AM" if hour == 0 else f"{hour} AM"
+        am_ticktext.append(label)
+
+    # PM hours => 0..11 (but conceptually 12..23)
+    pm_tickvals = []
+    pm_ticktext = []
+    for i, hour in enumerate(range(12, 24)):  # 12..23
+        # For PM subset, hour i in [0..11], but actual hour=12..23
+        # bin_index = (hour-12)*4
+        bin_index = (hour - 12) * 4
+        angle = bin_index * angle_step
+        pm_tickvals.append(angle)
+        if hour == 12:
+            pm_ticktext.append("12 PM")
+        else:
+            pm_ticktext.append(f"{hour-12} PM")
+
+    # -------------------------------------------------------------------------
+    # 7) Build the subplot with two polar charts
+    # -------------------------------------------------------------------------
     fig = make_subplots(
-        rows=1, cols=2,
+        rows=1,
+        cols=2,
         specs=[[{"type": "polar"}, {"type": "polar"}]],
-        subplot_titles=["AM (0-11:59)", "PM (12:00-23:59)"]
+        #subplot_titles=["AM", "PM"]
     )
 
-    # Barpolar for AM
     fig.add_trace(
         go.Barpolar(
-            r=am_counts,
-            theta=am_centers,
-            width=30,  # each bin is 30 deg
-            text=am_hover,
-            hovertemplate="%{text}<extra></extra>",
-            name="AM"
+            r=am_counts_arr,
+            theta=angles,
+            width=angle_step,
+            marker_color="blue",
+            name="AM 15-min bins",
         ),
         row=1, col=1
     )
 
-    # Barpolar for PM
     fig.add_trace(
         go.Barpolar(
-            r=pm_counts,
-            theta=pm_centers,
-            width=30,
-            text=pm_hover,
-            hovertemplate="%{text}<extra></extra>",
-            name="PM"
+            r=pm_counts_arr,
+            theta=angles,
+            width=angle_step,
+            marker_color="firebrick",
+            name="PM 15-min bins",
         ),
         row=1, col=2
     )
 
-    # 8) Layout updates for each polar subplot
+    # -------------------------------------------------------------------------
+    # 8) Set same max radial range for easier comparison
+    # -------------------------------------------------------------------------
+    max_val = float(max(am_counts_arr.max(), pm_counts_arr.max()))
+
+    # -------------------------------------------------------------------------
+    # 9) Update layout
+    # -------------------------------------------------------------------------
     fig.update_layout(
-        title="Circular Time Plots (AM / PM) with Weight 'Popouts'",
+        title=dict(
+            text="Radial Plot (15-min Bins): Hourly Count of Lifts (AM vs. PM)",
+            font=dict(size=24)  # Title font size
+        ),
         showlegend=False,
+        template="plotly_white",
         polar=dict(
-            radialaxis=dict(title="Count of Lifts", showticklabels=True),
+            radialaxis=dict(
+                showticklabels=False,  # Remove radial axis tick labels
+                title=None,            # Remove radial axis title
+                range=[0, max_val]
+            ),
             angularaxis=dict(
+                tickmode="array",
+                tickvals=am_tickvals,
+                ticktext=am_ticktext,
+                tickfont=dict(size=24),  # Angular axis tick font size
                 direction="clockwise",
-                rotation=0
+                rotation=90  # 12:00 at top
             )
         ),
         polar2=dict(
-            radialaxis=dict(title="Count of Lifts", showticklabels=True),
+            radialaxis=dict(
+                showticklabels=False,  # Remove radial axis tick labels
+                title=None,            # Remove radial axis title
+                range=[0, max_val]
+            ),
             angularaxis=dict(
+                tickmode="array",
+                tickvals=pm_tickvals,
+                ticktext=pm_ticktext,
+                tickfont=dict(size=24),  # Angular axis tick font size
                 direction="clockwise",
-                rotation=0
+                rotation=90
             )
-        ),
-        template="plotly_white"
+        )
     )
+
 
     return fig

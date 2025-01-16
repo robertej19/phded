@@ -3,7 +3,7 @@ import plotly.express as px
 
 def create_time_hist_figure(df: pd.DataFrame):
     """
-    Creates and returns a 1D histogram of the 'Time' column.
+    Creates and returns a 1D histogram of the 'Time' column with increased font sizes.
     """
     # Convert 'Time' to numeric if needed
     if "Time" in df.columns:
@@ -18,6 +18,20 @@ def create_time_hist_figure(df: pd.DataFrame):
     fig.update_layout(
         xaxis_title="Time (Military)",
         yaxis_title="Count",
-        template="plotly_white"
+        template="plotly_white",
+        font=dict(
+            size=18,  # Increase font size globally
+        ),
+        title=dict(
+            font=dict(size=24)  # Increase title font size
+        ),
+        xaxis=dict(
+            title_font=dict(size=20),  # Increase x-axis title font size
+            tickfont=dict(size=16)    # Increase x-axis tick font size
+        ),
+        yaxis=dict(
+            title_font=dict(size=20),  # Increase y-axis title font size
+            tickfont=dict(size=16)    # Increase y-axis tick font size
+        )
     )
     return fig

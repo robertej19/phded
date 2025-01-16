@@ -121,16 +121,25 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
 
     # 10) Update layout with formatted time labels
     fig.update_layout(
-        title="Time of Day vs. Top Set Weight",
+        #increase title font size
+        title=dict(
+            text="Time of Day vs. Top Set Weight",
+            font=dict(size=24)
+        ),
         xaxis=dict(
             title="Time (AM/PM)",
             tickmode="array",
             tickvals=xcenters,
+            title_font = dict(size=24),
             ticktext=time_labels,  # Use AM/PM formatted labels
             range=[time_min, time_max],
+            tickfont=dict(size=20) 
+
         ),
         yaxis=dict(
-            title=f"{weight_col} (lbs)"
+            title=f"{weight_col} (lbs)",
+            title_font=dict(size=24),
+            tickfont=dict(size=20) 
         ),
         template="plotly_white"
     )

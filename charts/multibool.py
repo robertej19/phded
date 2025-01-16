@@ -10,9 +10,7 @@ def create_boolean_grip_heatmap(df: pd.DataFrame) -> go.Figure:
     - The y-axis represents combinations of 'Deficiet' and 'Pauses'.
     - The z-values represent the count of occurrences for each combination.
 
-    Assumptions:
-      - The DataFrame contains boolean columns: 'Beltless', 'Stiff Bar', 'Deficiet', 'Pauses'.
-      - A categorical column 'Grip' with options 'M', 'S', 'DO'.
+    Zero values are displayed as white.
     """
 
     # Ensure required columns exist
@@ -44,14 +42,26 @@ def create_boolean_grip_heatmap(df: pd.DataFrame) -> go.Figure:
     # Pivot data for heatmap
     pivot_table = heatmap_data.pivot(index="Y_Combination", columns="X_Combination", values="Count").fillna(0)
 
+    # Convert pivot table to numpy array for z-values
+    z_values = pivot_table.values
+
+    # Define a custom colorscale with white for zero values
+    colorscale = [
+        [0.0, "white"],  # Map zero values to white
+        [0.01, "rgb(68, 1, 84)"],  # Start Viridis scale after zero
+        [1.0, "rgb(253, 231, 37)"]
+    ]
+
     # Create heatmap
     fig = go.Figure(
         data=go.Heatmap(
-            z=pivot_table.values,
+            z=z_values,
             x=pivot_table.columns,
             y=pivot_table.index,
-            colorscale="Viridis",
+            colorscale=colorscale,
             colorbar=dict(title="Count"),
+            zmin=0,  # Ensure valid range for colormap
+            zmax=z_values.max()
         )
     )
 

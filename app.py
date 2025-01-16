@@ -3,38 +3,61 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 import pandas as pd
 # 1) Import data loader
-from data import load_data
+from utils.data import load_data, is_data_stale
 import datetime
+import os, sys
+import os
+import time
+import numpy as np
+import pandas as pd
+import dash
+import dash_bootstrap_components as dbc
+from dash import dcc, html, Input, Output
+import pandas as pd
+from charts.five_multi import create_multi_weight_scatter
+
 
 # 2) Import specific chart modules
 from charts.time_hist import create_time_hist_figure
-from charts.day_vs_avg import create_scatter_day_vs_avg
 from charts.time_vs_weight_2d import create_time_vs_weight_2d
-from charts.top_set_hist import create_top_set_figure
-from charts.effective_weight_hist import create_effective_weight_figure
-from charts.time_vs_weight_circular import create_time_vs_weight_circular
+from charts.time_vs_weight_circular import create_am_pm_radial_time_plot
 from charts.three_day_vs_time_of_day import create_day_vs_time_of_day
 from charts.four_rest_time import create_rest_time_histogram
 from charts.five_multi import create_multi_weight_scatter
 from charts.multibool import create_boolean_grip_heatmap
 # Compute "Day number: X"
-start_date = datetime.datetime(2021, 12, 28)
+start_date = datetime.datetime(2021, 12, 29)
 today = datetime.datetime.today()
 delta = today - start_date
 day_number = delta.days
 
-# Suppose df is your DataFrame with 'DecimalHour' and 'Top Set Weight'.
 
 # -------------------------------------------------------------------------
-# Load the data once, so all charts can use the same DataFrame
-# Replace with your actual CSV URL
-# # # CSV_URL = (
-# # #     "https://docs.google.com/spreadsheets/d/"
-# # #     "1V0sk1rLHvYOfzpLnLOgzEi5eeOkRfzAHQqQ0AegjlOI"
-# # #     "/export?format=csv&gid=0"
-# # # )
-# # # df = load_data(CSV_URL)
-df = pd.read_csv("local_data.csv")
+# 1) Config & Utilities
+# -------------------------------------------------------------------------
+CSV_URL = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1V0sk1rLHvYOfzpLnLOgzEi5eeOkRfzAHQqQ0AegjlOI"
+    "/export?format=csv&gid=0"
+)
+LOCAL_CSV = "data/local_data.csv"
+
+# -------------------------------------------------------------------------
+# 2) Load/Cache Data
+# -------------------------------------------------------------------------
+if is_data_stale(LOCAL_CSV):
+    df = pd.read_csv(CSV_URL)
+    df.to_csv(LOCAL_CSV, index=False)
+else:
+    df = pd.read_csv(LOCAL_CSV)
+
+# Convert some columns to numeric if they exist
+for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+
+
 df = df.dropna(subset=["Top Set Weight"])
 
 # Compute "Most Recent Lift: YxZ"
@@ -56,59 +79,45 @@ else:
 # -------------------------------------------------------------------------
 # Build Figures (calling each chart module)
 fig_time_hist = create_time_hist_figure(df)
-fig_day_vs_avg = create_scatter_day_vs_avg(df)
-fig_top_set_hist = create_top_set_figure(df)
-fig_effective_weight = create_effective_weight_figure(df)
 fig_multi = create_multi_weight_scatter(df)
 fig_bool = create_boolean_grip_heatmap(df)
-df = df.dropna(subset=["Time"])
-print(df)
-fig_2d_hist = create_time_vs_weight_2d(df)
-fig_time_circular = create_time_vs_weight_circular(df)
-fig_day_vs_time_of_day = create_day_vs_time_of_day(df)
-fig_rest_time = create_rest_time_histogram(df)
+df2 = df.dropna(subset=["Time"])
+fig_2d_hist = create_time_vs_weight_2d(df2)
+fig_time_circular = create_am_pm_radial_time_plot(df2)
+fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
+fig_rest_time = create_rest_time_histogram(df2)
 #df["Rest"] = (24-last_days_lift)+Current_daysLift (all but first day)
 
 #save df to csv
-df.to_csv("processed.csv")
+#df.to_csv("processed.csv")
 # ... figure_top_set = create_top_set_figure(df), etc.
 
 
 
 """
 ############################
-Deadlift every day
-Day Number | Most recent Lift | Total Weight Lifted at top Set
-Instagram | Youtube | Homepage
+To Do
+Put dual guassian distribution on rest time histogram
+Plot weight & frequency vs day of the week!
+Plot lifting time distribution vs day of the week!
+#Earliest lift as a function of time
+Distribution of number of reps, top set weight, average weight, effective weight
 
-#### DAYS HORIZONTAL AXIS
-Raw topset - red
-# of reps - blue
-effective weight - purple
-average weight - green
-daily delta - yellow
-smoothed delta - orange
-time of day lifted - black
-
-#### Circular Time of Day
-toggle switch for pure histogram vs circular heatmap // or linear heatmap
-
-### 1D rest histogram
-### tile plot of beltless deficiet stiff bar other/mixed/straps - 4x6 bingo grid, on hover = show selected points on # vs day plot (#1)
-
+Fix Bingo plot, on hover = show selected points on # vs day plot (#1)
+Fix Time of Day, if desired toggle switch for pure histogram vs circular heatmap // or linear heatmap
 
 """
-
-# -------------------------------------------------------------------------
-# Create Dash App
+# 3) Define the Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
-server = app.server  # For deployment if needed
+server = app.server
 
 
-# Layout with multiple rows, each containing a chart
+# 4) Layout
+# 4) Layout
 app.layout = dbc.Container(
     fluid=True,
-       children=[
+    className="fs-5",  # Increase font size everywhere
+    children=[
         dbc.Row(
             dbc.Col(
                 html.H1("Deadlift *Everyday*", className="text-center mt-4"),
@@ -118,9 +127,51 @@ app.layout = dbc.Container(
         
         dbc.Row(
             dbc.Col(
-                html.P(
-                    f"Day Number: {day_number} | Most Recent Lift: {most_recent_lift} on {most_recent_date} | Cumulative Weight Lifted : {total_weight_lifted:,} lbs",
-                    className="text-center"
+                html.Div(
+                    [
+                        html.P(
+                            f"Day Number: {day_number} | Most Recent Lift: {most_recent_lift} on {most_recent_date} | Cumulative Weight Lifted: {total_weight_lifted:,} lbs",
+                            className="text-center fs-4"  # fs-4 for larger text
+                        ),
+                        
+                        
+
+                        html.Div(
+                            [
+                                html.A(
+                                    html.Img(
+                                        src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png",
+                                        alt="Instagram",
+                                        style={"width": "30px", "height": "30px"}
+                                    ),
+                                    href="https://www.instagram.com/ph.d.e.d/",
+                                    target="_blank",
+                                    className="me-3"  # Add spacing between icons
+                                ),
+                                html.A(
+                                    html.Img(
+                                        src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png",
+                                        alt="YouTube",
+                                        style={"width": "30px", "height": "30px"}
+                                    ),
+                                    href="https://www.youtube.com/channel/UC6ynxFCZgGhjlvV5C-8sJXQ",
+                                    target="_blank",
+                                    className="me-3"  # Add spacing between icons
+                                ),
+                                html.A(
+                                    "Ψ",  # Greek symbol Psi
+                                    href="https://superfluid.systems/",
+                                    target="_blank",
+                                    className="text-decoration-none fs-4",  # Larger font for Psi
+                                    style={"color": "black", "text-decoration": "none"}  # Styling for Psi
+                                )
+                            ],
+                            className="text-center mt-2"
+                        )
+
+
+
+                    ]
                 ),
                 width=12
             )
@@ -128,77 +179,131 @@ app.layout = dbc.Container(
 
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_multi),
+                dcc.Graph(
+                    id="multi-scatter-graph",
+                    figure=fig_multi,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}  # 10% L/R padding, taller plot
+                ),
                 width=12
             )
         ),
 
-
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(figure=fig_bool),
-                width=12
-            )
-        ),
-
-
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(figure=fig_day_vs_time_of_day),
-                width=12
-            )
+        html.Div(
+            className="my-3 text-center",
+            children=[
+                dcc.Checklist(
+                    id="metric-checklist",
+                    options=[
+                        {"label": "Effective Weight", "value": "Effective Weight"},
+                        {"label": "Average Weight",   "value": "Average Weight"},
+                        {"label": "Top Set Weight",   "value": "Top Set Weight"},
+                        {"label": "Number of Reps",   "value": "Number of Reps"},
+                    ],
+                    value=["Average Weight"],
+                    inline=True
+                )
+            ]
         ),
         
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_top_set_hist),
+                dcc.Graph(
+                    figure=fig_2d_hist,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
                 width=12
             )
         ),
 
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_effective_weight),
+                dcc.Graph(
+                    figure=fig_time_circular,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
+                width=12
+            )
+        ),
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_day_vs_time_of_day,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
                 width=12
             )
         ),
 
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_rest_time),
+                dcc.Graph(
+                    figure=fig_rest_time,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
                 width=12
             )
         ),
 
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_day_vs_avg),
+                dcc.Graph(
+                    figure=fig_time_hist,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
                 width=12
             )
         ),
 
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(figure=fig_time_hist),
-                width=12
-            )
-        ),
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(figure=fig_2d_hist),
-                width=12
-            )
-        ),
+
 
         dbc.Row(
             dbc.Col(
-                dcc.Graph(figure=fig_time_circular),
+                dcc.Graph(
+                    figure=fig_bool,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
                 width=12
             )
         ),
-
     ]
 )
 
+
+# 5) Callback: Toggle Trace Visibility (Opacity) Based on the Checklist
+@app.callback(
+    Output("multi-scatter-graph", "figure"),
+    [Input("metric-checklist", "value")]
+)
+def toggle_traces(selected_metrics):
+    # Start from the base figure
+    fig = create_multi_weight_scatter(df)
+
+    # The figure has 4 traces in this order:
+    #  0: Effective Weight
+    #  1: Average Weight
+    #  2: Top Set Weight
+    #  3: Number of Reps
+
+    # A helper mapping trace index -> metric name
+    trace_names = [
+        "Effective Weight",
+        "Average Weight",
+        "Top Set Weight",
+        "Number of Reps"
+    ]
+
+    # Adjust opacity of each trace
+    for i, trace_name in enumerate(trace_names):
+        if trace_name in selected_metrics:
+            # For a line trace (no markers)
+            fig.data[i].opacity = 1.0
+        else:
+            fig.data[i].opacity = 0.0
+
+
+
+    return fig
+
+# 6) Run
 if __name__ == "__main__":
     app.run_server(debug=True)
