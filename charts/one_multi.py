@@ -70,7 +70,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Top Set Weight"],
         mode="markers",
         name="Top Set Weight",
-        marker=dict(opacity=0.1),
+        marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
             "Day: %{x}<br>"
@@ -85,7 +85,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Number of Reps"],
         mode="markers",
         name="Number of Reps",
-        marker=dict(opacity=0.1),
+        marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
             "Day: %{x}<br>"
@@ -103,7 +103,12 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         showlegend=False,  # No legend in the plot
         xaxis_title="Day Number",
-        template="plotly_white",
+        #template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        
+
         
         font=dict(
             size=24,  # Increase font size globally

@@ -174,7 +174,11 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             font=dict(size=24)  # Title font size
         ),
         showlegend=False,
-        template="plotly_white",
+        #template="plotly_white",
+        #template="plotly_dark",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
         polar=dict(
             radialaxis=dict(
                 showticklabels=False,  # Remove radial axis tick labels

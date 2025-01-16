@@ -70,7 +70,11 @@ def create_boolean_grip_heatmap(df: pd.DataFrame) -> go.Figure:
         title="2D Heatmap of Grip and Boolean Combinations",
         xaxis=dict(title="Grip and Beltless/Stiff Bar Combinations", tickangle=45),
         yaxis=dict(title="Deficiet and Pauses Combinations"),
-        template="plotly_white"
+        #template="plotly_white"
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+
     )
 
     return fig

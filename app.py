@@ -14,17 +14,20 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output
 import pandas as pd
-from charts.five_multi import create_multi_weight_scatter
+from charts.one_multi import create_multi_weight_scatter
 
 
 # 2) Import specific chart modules
-from charts.time_hist import create_time_hist_figure
-from charts.time_vs_weight_2d import create_time_vs_weight_2d
-from charts.time_vs_weight_circular import create_am_pm_radial_time_plot
-from charts.three_day_vs_time_of_day import create_day_vs_time_of_day
-from charts.four_rest_time import create_rest_time_histogram
-from charts.five_multi import create_multi_weight_scatter
-from charts.multibool import create_boolean_grip_heatmap
+from charts.two_time_vs_weight_2d import create_time_vs_weight_2d
+from charts.three_time_vs_weight_circular import create_am_pm_radial_time_plot
+from charts.four_day_vs_time_of_day import create_day_vs_time_of_day
+from charts.five_rest_time import create_rest_time_histogram
+from charts.one_multi import create_multi_weight_scatter
+from charts.six_multibool import create_boolean_grip_heatmap
+from charts.seven_oneday import create_histogram_with_toggles
+from charts.eight_day_week_time import create_day_of_week_vs_weight_with_labels
+from charts.eight_day_week_time import create_day_of_week_vs_time_am_pm
+
 # Compute "Day number: X"
 start_date = datetime.datetime(2021, 12, 29)
 today = datetime.datetime.today()
@@ -78,14 +81,19 @@ else:
 
 # -------------------------------------------------------------------------
 # Build Figures (calling each chart module)
-fig_time_hist = create_time_hist_figure(df)
 fig_multi = create_multi_weight_scatter(df)
 fig_bool = create_boolean_grip_heatmap(df)
+fig_oneday = create_histogram_with_toggles(df)
 df2 = df.dropna(subset=["Time"])
+
 fig_2d_hist = create_time_vs_weight_2d(df2)
 fig_time_circular = create_am_pm_radial_time_plot(df2)
 fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
 fig_rest_time = create_rest_time_histogram(df2)
+
+fig_dwt2 = create_day_of_week_vs_weight_with_labels(df)
+fig_dwt = create_day_of_week_vs_time_am_pm(df)
+
 #df["Rest"] = (24-last_days_lift)+Current_daysLift (all but first day)
 
 #save df to csv
@@ -97,18 +105,18 @@ fig_rest_time = create_rest_time_histogram(df2)
 """
 ############################
 To Do
-Put dual guassian distribution on rest time histogram
-Plot weight & frequency vs day of the week!
-Plot lifting time distribution vs day of the week!
-#Earliest lift as a function of time
-Distribution of number of reps, top set weight, average weight, effective weight
+Plot weight & frequency & lifting time distribution vs day of the week!
 
+
+Fix bimodal guassian distribution
 Fix Bingo plot, on hover = show selected points on # vs day plot (#1)
 Fix Time of Day, if desired toggle switch for pure histogram vs circular heatmap // or linear heatmap
 
+'answer the question - what new information do i convey by plotting this?'
 """
 # 3) Define the Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
+#app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 server = app.server
 
 
@@ -247,13 +255,31 @@ app.layout = dbc.Container(
         dbc.Row(
             dbc.Col(
                 dcc.Graph(
-                    figure=fig_time_hist,
+                    figure=fig_oneday,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
+                width=12
+            )
+        ),
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_dwt,
                     style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
             )
         ),
 
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_dwt2,
+                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
+                width=12
+            )
+        ),
 
 
         dbc.Row(

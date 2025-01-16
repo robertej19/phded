@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-import plotly.express as px
 
-
-def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
+def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
     """
     Create a 2D histogram of 'Time' (horizontal axis) vs. 'Weight' (vertical axis),
     in 10 lb increments from min to max weight.
@@ -107,43 +105,47 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
                 day_text = f"{int(count)} lift" if count == 1 else f"{int(count)} lifts"
                 hover_text[i, j] = f"{time_range}<br>{weight_range}<br>{day_text}"
 
-
-    fig = px.scatter(
-        df,
-        x="Day Number",
-        y="DecimalHour",
-        hover_data=["Time", "Grip"],
-        title="Day vs. Average Weight"
+    # 9) Build Heatmap
+    fig = go.Figure(
+        data=go.Heatmap(
+            x=xcenters,
+            y=ycenters,
+            z=H.T,  # Transpose to match Plotly's row-column convention
+            colorscale=plotly_colorscale,
+            colorbar=dict(title="Count"),
+            zmin=0,  # Ensure valid range for colormap
+            text=hover_text.T,  # Transpose to align with z=H.T
+            hovertemplate="%{text}<extra></extra>",  # Use custom hover text
+        )
     )
 
-    # # 9) Build Heatmap
-    # fig = go.Figure(
-    #     data=go.Heatmap(
-    #         x=xcenters,
-    #         y=ycenters,
-    #         z=H.T,  # Transpose to match Plotly's row-column convention
-    #         colorscale=plotly_colorscale,
-    #         colorbar=dict(title="Count"),
-    #         zmin=0,  # Ensure valid range for colormap
-    #         text=hover_text.T,  # Transpose to align with z=H.T
-    #         hovertemplate="%{text}<extra></extra>",  # Use custom hover text
-    #     )
-    # )
-
     # 10) Update layout with formatted time labels
-    # fig.update_layout(
-    #     title="Time of Day vs. Top Set Weight",
-    #     xaxis=dict(
-    #         title="Time (AM/PM)",
-    #         tickmode="array",
-    #         tickvals=xcenters,
-    #         ticktext=time_labels,  # Use AM/PM formatted labels
-    #         range=[time_min, time_max],
-    #     ),
-    #     yaxis=dict(
-    #         title=f"{weight_col} (lbs)"
-    #     ),
-    #     template="plotly_white"
-    # )
+    fig.update_layout(
+        #increase title font size
+        title=dict(
+            text="Time of Day vs. Top Set Weight",
+            font=dict(size=24)
+        ),
+        xaxis=dict(
+            title="Time (AM/PM)",
+            tickmode="array",
+            tickvals=xcenters,
+            title_font = dict(size=24),
+            ticktext=time_labels,  # Use AM/PM formatted labels
+            range=[time_min, time_max],
+            tickfont=dict(size=20) 
+
+        ),
+        yaxis=dict(
+            title=f"{weight_col} (lbs)",
+            title_font=dict(size=24),
+            tickfont=dict(size=20) 
+        ),
+        #template="plotly_white",
+        #template="plotly_dark",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+    )
 
     return fig

@@ -60,7 +60,11 @@ def create_rest_time_histogram(df: pd.DataFrame):
     # 1) Increase Font Everywhere
     # ----------------------------
     fig.update_layout(
-        template="plotly_white",
+        #template="plotly_white",
+        #template="plotly_dark",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
         font=dict(size=18),  # Global font size
         title=dict(font=dict(size=24)),
         xaxis=dict(
@@ -107,7 +111,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
     # The histogram y-axis is "count" not "density," so we need to scale the PDF to match.
     # total_area = bin_width * number_of_samples
     # We'll approximate the bin_width from histogram (range / nbins).
-    range_width = x_max - x_min
+    range_width = 48#x_max - x_min
     nbins = 48
     bin_width = range_width / nbins
     total_samples = len(X)
@@ -123,6 +127,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
         mode="lines",
         line=dict(color="red", width=3),
         name="Bimodal Fit",
+
     )
 
     # Convert the Plotly Express figure to a graph_objects figure so we can add a trace
