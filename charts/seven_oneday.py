@@ -11,11 +11,14 @@ def create_histogram_with_toggles(df):
 
     # 1) Define which columns you want to show
     metrics = [
-        {"label": "Number of Reps",   "col": "Number of Reps"},
-        {"label": "Top Set Weight",  "col": "Top Set Weight"},
-        {"label": "Average Weight",  "col": "Average Weight"},
-        {"label": "Effective Weight","col": "Effective Weight"},
+        {"label": "Number of Reps",    "col": "Number of Reps"},
+        {"label": "Top Set Weight",   "col": "Top Set Weight"},
+        {"label": "Average Weight",   "col": "Average Weight"},
+        {"label": "Effective Weight", "col": "Effective Weight"},
     ]
+
+    # Metrics that require x-axis limits to be set to 400-600
+    metrics_with_custom_xlim = {"Top Set Weight", "Average Weight", "Effective Weight"}
 
     # 2) Create a histogram trace for each metric
     fig = go.Figure()
@@ -26,14 +29,16 @@ def create_histogram_with_toggles(df):
         # Only build the trace if the column exists in df
         if col_name not in df.columns:
             continue
-        
-        # Build the histogram trace
+
+        # Build the histogram trace with customized hover labels
         fig.add_trace(
             go.Histogram(
                 x=df[col_name],
                 name=m["label"],
                 visible=True if i == 0 else False,  # Show only the first trace by default
                 opacity=0.6,  # Slight transparency so overlapping hist can be seen
+                nbinsx=20,     # Set number of bins
+                hovertemplate="%{x0} - %{x1} %{name}<br>%{y} lifts",  # Customized hover label
             )
         )
 
@@ -44,12 +49,30 @@ def create_histogram_with_toggles(df):
         # We create a list of True/False for each trace
         visible_array = [False] * len(metrics)
         visible_array[i] = True  # Show the i-th trace
+
+        # Prepare layout updates
+        layout_updates = {
+            "xaxis.title.text": m["label"],
+            "title": f"Distribution of {m['label']}"
+        }
+
+        # Set x-axis and y-axis range if the metric requires it
+        if m["label"] in metrics_with_custom_xlim:
+            layout_updates["xaxis.range"] = [400, 600]
+            layout_updates["yaxis.range"] = [0, 180]
+        else:
+            # Set default ranges for other metrics
+            layout_updates["xaxis.range"] = [0, 10]
+            layout_updates["yaxis.range"] = [0, 500]
+
         buttons.append(
             dict(
                 label=m["label"],
                 method="update",
-                args=[{"visible": visible_array},
-                      {"title": f"Distribution of {m['label']}"}]
+                args=[
+                    {"visible": visible_array},
+                    layout_updates
+                ],
             )
         )
 
@@ -60,13 +83,20 @@ def create_histogram_with_toggles(df):
                 buttons=buttons,
                 direction="down",       # or "left", if you want horizontal
                 showactive=True,
-                x=1.15,                 # adjust placement
+                x=1.15,                 # adjust placement as needed
                 y=0.5,
                 xanchor="left",
-                yanchor="middle"
+                yanchor="middle",
+                font=dict(
+                    color="black",      # Button text color
+                    size=24             # Button text font size
+                ),
             )
         ],
-        title="Distribution of Number of Reps (default)",
+        title="Distribution of Parameters",
+        font=dict(
+            size=24  # Increase font size everywhere
+        ),
         barmode="overlay",  # So multiple hist traces can overlap
         template="plotly_dark",      # if you want a dark theme
         paper_bgcolor="rgba(0,0,0,0)",  # transparent backgrounds
@@ -75,23 +105,6 @@ def create_histogram_with_toggles(df):
 
     # (Optional) further axis formatting
     fig.update_xaxes(title_text="Value")
-    fig.update_yaxes(title_text="Count")
+    fig.update_yaxes(title_text="Number of Lifts")
 
     return fig
-
-
-# Example usage:
-if __name__ == "__main__":
-    import pandas as pd
-    
-    # Sample data
-    data = {
-        "Number of Reps": [5,5,5,3,2,8,12,5,6,5,8],
-        "Top Set Weight": [135,185,225,225,225,255,275,315,185,135,225],
-        "Average Weight": [100,140,200,210,210,230,250,270,140,110,220],
-        "Effective Weight": [500,700,1000,675,450,1840,3300,945,600,355,1790],
-    }
-    df = pd.DataFrame(data)
-
-    fig = create_histogram_with_toggles(df)
-    fig.show()

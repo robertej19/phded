@@ -27,6 +27,7 @@ from charts.six_multibool import create_boolean_grip_heatmap
 from charts.seven_oneday import create_histogram_with_toggles
 from charts.eight_day_week_time import create_day_of_week_vs_weight_with_labels
 from charts.eight_day_week_time import create_day_of_week_vs_time_am_pm
+import sys
 
 # Compute "Day number: X"
 start_date = datetime.datetime(2021, 12, 29)
@@ -48,7 +49,7 @@ LOCAL_CSV = "data/local_data.csv"
 # -------------------------------------------------------------------------
 # 2) Load/Cache Data
 # -------------------------------------------------------------------------
-if is_data_stale(LOCAL_CSV):
+if not is_data_stale(LOCAL_CSV):
     df = pd.read_csv(CSV_URL)
     df.to_csv(LOCAL_CSV, index=False)
 else:
@@ -62,11 +63,13 @@ for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
 
 
 df = df.dropna(subset=["Top Set Weight"])
-
+print(df)
 # Compute "Most Recent Lift: YxZ"
 if 'Top Set Weight' in df.columns and 'Number of Reps' in df.columns:
     most_recent_weight = df['Top Set Weight'].iloc[-1]
     most_recent_reps = df['Number of Reps'].iloc[-1]
+    print(most_recent_weight)
+    print(most_recent_reps)
     most_recent_lift = f"{int(most_recent_weight)}lbs x{int(most_recent_reps)}"
     most_recent_date_raw = str(df['Date'].iloc[-1])  # Ensure it's a string
     most_recent_date = datetime.datetime.strptime(most_recent_date_raw, "%Y%m%d").strftime("%m.%d.%y")
@@ -94,6 +97,17 @@ fig_rest_time = create_rest_time_histogram(df2)
 fig_dwt2 = create_day_of_week_vs_weight_with_labels(df)
 fig_dwt = create_day_of_week_vs_time_am_pm(df)
 
+number_of_empty_rows_before_today = day_number - len(df)
+
+empty_rows_message = (
+    html.P(
+        f"Note: {number_of_empty_rows_before_today:,} lifts are not yet entered",
+        className="text-center fs-4"  # fs-4 for larger text
+    )
+    if number_of_empty_rows_before_today != 0
+    else None
+)
+
 #df["Rest"] = (24-last_days_lift)+Current_daysLift (all but first day)
 
 #save df to csv
@@ -101,12 +115,11 @@ fig_dwt = create_day_of_week_vs_time_am_pm(df)
 # ... figure_top_set = create_top_set_figure(df), etc.
 
 
-
 """
 ############################
 To Do
 Plot weight & frequency & lifting time distribution vs day of the week!
-
+PLOT DISTRIBUTION OF MINUTES - 0 to 59				
 
 Fix bimodal guassian distribution
 Fix Bingo plot, on hover = show selected points on # vs day plot (#1)
@@ -137,12 +150,21 @@ app.layout = dbc.Container(
             dbc.Col(
                 html.Div(
                     [
+
+
+                        
                         html.P(
-                            f"Day Number: {day_number} | Most Recent Lift: {most_recent_lift} on {most_recent_date} | Cumulative Weight Lifted: {total_weight_lifted:,} lbs",
+                            [
+                                f"{day_number} Days",
+                                html.Span(" | ", style={"margin": "0 20px"}),
+                                f"Most Recent Lift: {most_recent_lift} on {most_recent_date}",
+                                html.Span(" | ", style={"margin": "0 20px"}),
+                                f"Cumulative Top Set Weight Lifted: {total_weight_lifted:,} lbs",
+                            ],
                             className="text-center fs-4"  # fs-4 for larger text
                         ),
-                        
-                        
+
+
 
                         html.Div(
                             [
@@ -171,18 +193,22 @@ app.layout = dbc.Container(
                                     href="https://superfluid.systems/",
                                     target="_blank",
                                     className="text-decoration-none fs-4",  # Larger font for Psi
-                                    style={"color": "black", "text-decoration": "none"}  # Styling for Psi
+                                    style={"color": "white", "text-decoration": "none"}  # Styling for Psi
                                 )
                             ],
                             className="text-center mt-2"
-                        )
-
+                        ),
+                    empty_rows_message  # Conditionally rendered message
 
 
                     ]
                 ),
                 width=12
             )
+
+
+
+
         ),
 
         dbc.Row(
@@ -208,7 +234,8 @@ app.layout = dbc.Container(
                         {"label": "Number of Reps",   "value": "Number of Reps"},
                     ],
                     value=["Average Weight"],
-                    inline=True
+                    inline=True,
+                    labelStyle={"margin-right": "30px"}  # Increased spacing between options
                 )
             ]
         ),
@@ -252,15 +279,7 @@ app.layout = dbc.Container(
             )
         ),
 
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(
-                    figure=fig_oneday,
-                    style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
-                ),
-                width=12
-            )
-        ),
+
         dbc.Row(
             dbc.Col(
                 dcc.Graph(
@@ -281,21 +300,28 @@ app.layout = dbc.Container(
             )
         ),
 
-
         dbc.Row(
             dbc.Col(
                 dcc.Graph(
-                    figure=fig_bool,
+                    figure=fig_oneday,
                     style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
             )
         ),
+        # dbc.Row(
+        #     dbc.Col(
+        #         dcc.Graph(
+        #             figure=fig_bool,
+        #             style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+        #         ),
+        #         width=12
+        #     )
+        # ),
     ]
 )
 
 
-# 5) Callback: Toggle Trace Visibility (Opacity) Based on the Checklist
 @app.callback(
     Output("multi-scatter-graph", "figure"),
     [Input("metric-checklist", "value")]
@@ -321,14 +347,18 @@ def toggle_traces(selected_metrics):
     # Adjust opacity of each trace
     for i, trace_name in enumerate(trace_names):
         if trace_name in selected_metrics:
-            # For a line trace (no markers)
             fig.data[i].opacity = 1.0
         else:
             fig.data[i].opacity = 0.0
 
-
+    # Toggle visibility of the second y-axis based on "Number of Reps" selection
+    if "Number of Reps" in selected_metrics:
+        fig.update_layout(yaxis2=dict(visible=True))
+    else:
+        fig.update_layout(yaxis2=dict(visible=False))
 
     return fig
+
 
 # 6) Run
 if __name__ == "__main__":
