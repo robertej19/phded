@@ -361,5 +361,8 @@ def toggle_traces(selected_metrics):
 
 
 # 6) Run
+#if __name__ == "__main__":
+#    app.run_server(debug=True)
+
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
