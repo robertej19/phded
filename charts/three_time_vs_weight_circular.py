@@ -134,9 +134,13 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     fig = make_subplots(
         rows=2,
         cols=1,
-        specs=[[{"type": "polar"}, {"type": "polar"}]],
-        #subplot_titles=["AM", "PM"]
+        specs=[
+            [{"type": "polar"}],
+            [{"type": "polar"}]
+        ],
+        # subplot_titles=["First Polar Plot", "Second Polar Plot"]
     )
+
 
     fig.add_trace(
         go.Barpolar(
