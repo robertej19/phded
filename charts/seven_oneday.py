@@ -89,13 +89,13 @@ def create_histogram_with_toggles(df):
                 yanchor="middle",
                 font=dict(
                     color="black",      # Button text color
-                    size=24             # Button text font size
+                    size=12             # Button text font size
                 ),
             )
         ],
         title="Distribution of Parameters",
         font=dict(
-            size=24  # Increase font size everywhere
+            size=12  # Increase font size everywhere
         ),
         barmode="overlay",  # So multiple hist traces can overlap
         template="plotly_dark",      # if you want a dark theme

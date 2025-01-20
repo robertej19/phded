@@ -111,20 +111,20 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
 
         
         font=dict(
-            size=24,  # Increase font size globally
+            size=12,  # Increase font size globally
         ),
         title=dict(
             text="Comparison of Effective, Average, and Top Set",
-            font=dict(size=24)  # Increase title font size
+            font=dict(size=12)  # Increase title font size
         ),
         xaxis=dict(
-            title_font=dict(size=24),  # Increase x-axis title font size
-            tickfont=dict(size=24)    # Increase x-axis tick font size
+            title_font=dict(size=12),  # Increase x-axis title font size
+            tickfont=dict(size=12)    # Increase x-axis tick font size
         ),
         yaxis=dict(
             title="Weight (lbs)",
-            title_font=dict(size=24),  # Increase y-axis title font size
-            tickfont=dict(size=24)    # Increase y-axis tick font size
+            title_font=dict(size=12),  # Increase y-axis title font size
+            tickfont=dict(size=12)    # Increase y-axis tick font size
         ),
 
         yaxis2=dict(

@@ -53,16 +53,16 @@ def create_rest_time_histogram(df: pd.DataFrame):
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         font=dict(size=18),
-        title=dict(font=dict(size=24)),
+        title=dict(font=dict(size=12)),
         xaxis=dict(
             title="Rest Time (hours)",
-            title_font=dict(size=20),
+            title_font=dict(size=12),
             tickfont=dict(size=16),
             range=[0, 48],
         ),
         yaxis=dict(
             title="Count",
-            title_font=dict(size=20),
+            title_font=dict(size=12),
             tickfont=dict(size=16),
         ),
     )

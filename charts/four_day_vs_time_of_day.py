@@ -113,11 +113,11 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         title=dict(
             text="Day Number vs. Time of Day",
-            font=dict(size=24)
+            font=dict(size=12)
         ),
         xaxis=dict(
             title="Day Number",
-            title_font=dict(size=20),
+            title_font=dict(size=12),
             tickfont=dict(size=16)
         ),
         yaxis=dict(

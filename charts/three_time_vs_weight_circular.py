@@ -171,7 +171,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         title=dict(
             text="Radial Plot (15-min Bins): Hourly Count of Lifts (AM vs. PM)",
-            font=dict(size=24)  # Title font size
+            font=dict(size=12)  # Title font size
         ),
         showlegend=False,
         #template="plotly_white",
@@ -189,7 +189,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                 tickmode="array",
                 tickvals=am_tickvals,
                 ticktext=am_ticktext,
-                tickfont=dict(size=24),  # Angular axis tick font size
+                tickfont=dict(size=12),  # Angular axis tick font size
                 direction="clockwise",
                 rotation=90  # 12:00 at top
             )
@@ -204,7 +204,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                 tickmode="array",
                 tickvals=pm_tickvals,
                 ticktext=pm_ticktext,
-                tickfont=dict(size=24),  # Angular axis tick font size
+                tickfont=dict(size=12),  # Angular axis tick font size
                 direction="clockwise",
                 rotation=90
             )

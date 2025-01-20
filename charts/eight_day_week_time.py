@@ -123,8 +123,8 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
         colorscale=viridis_colors,
         colorbar=dict(
             title="Count",
-            title_font=dict(size=18),
-            tickfont=dict(size=16)
+            title_font=dict(size=12),
+            tickfont=dict(size=12)
         ),
         hoverinfo="text",
         text=hover_text  # 2D list matching z
@@ -141,8 +141,8 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
             tickvals=xcenters,         # Centered day labels
             ticktext=day_labels,       # 7 labels for Mon..Sun
             title="Day of Week",
-            title_font=dict(size=18),
-            tickfont=dict(size=16),
+            title_font=dict(size=12),
+            tickfont=dict(size=12),
             range=[-0.5, 6.5]          # So we see Monday..Sunday nicely
         ),
         yaxis=dict(
@@ -150,8 +150,8 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
             tickvals=tickvals_4h,      # Show tick marks every 4 hrs
             ticktext=ticktext_4h,
             title="Time of Day",
-            title_font=dict(size=18),
-            tickfont=dict(size=16),
+            title_font=dict(size=12),
+            tickfont=dict(size=12),
             range=[0, 24]
         ),
         template="plotly_dark",
@@ -247,8 +247,8 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
         colorscale=viridis_colors,
         colorbar=dict(
             title="Count",
-            title_font=dict(size=18),
-            tickfont=dict(size=16)
+            title_font=dict(size=12),
+            tickfont=dict(size=12)
         ),
         hoverinfo="text",
         text=hover_text    # 2D list
@@ -261,14 +261,14 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
             tickvals=xcenters,          # center day labels
             ticktext=day_labels,        # Monday..Sunday
             title="Day of Week",
-            title_font=dict(size=18),
-            tickfont=dict(size=16),
+            title_font=dict(size=12),
+            tickfont=dict(size=12),
             range=[-0.5, 6.5]
         ),
         yaxis=dict(
             title="Top Set Weight (lbs)",
-            title_font=dict(size=18),
-            tickfont=dict(size=16),
+            title_font=dict(size=12),
+            tickfont=dict(size=12),
             range=[400, 600]  # Enforce 400..600
         ),
         template="plotly_dark",
