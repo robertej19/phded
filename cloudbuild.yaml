@@ -33,3 +33,6 @@ steps:
 
 images:
   - 'gcr.io/$PROJECT_ID/my-dash-app'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
