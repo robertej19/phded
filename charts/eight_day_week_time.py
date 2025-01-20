@@ -143,7 +143,7 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
             title="Day of Week",
             title_font=dict(size=12),
             tickfont=dict(size=12),
-            range=[-0.5, 7.0]          # So we see Monday..Sunday nicely
+            range=[0, 7.0]          # So we see Monday..Sunday nicely
         ),
         yaxis=dict(
             tickmode="array",
@@ -263,7 +263,7 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
             title="Day of Week",
             title_font=dict(size=12),
             tickfont=dict(size=12),
-            range=[-0.5, 7.0]
+            range=[0, 7.0]
         ),
         yaxis=dict(
             title="Top Set Weight (lbs)",

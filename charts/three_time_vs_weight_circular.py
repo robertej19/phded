@@ -132,8 +132,8 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     # 7) Build the subplot with two polar charts
     # -------------------------------------------------------------------------
     fig = make_subplots(
-        rows=1,
-        cols=2,
+        rows=2,
+        cols=1,
         specs=[[{"type": "polar"}, {"type": "polar"}]],
         #subplot_titles=["AM", "PM"]
     )
@@ -157,7 +157,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             marker_color="firebrick",
             name="PM 15-min bins",
         ),
-        row=1, col=2
+        row=2, col=1
     )
 
     # -------------------------------------------------------------------------
