@@ -131,7 +131,17 @@ Fix Time of Day, if desired toggle switch for pure histogram vs circular heatmap
 """
 # 3) Define the Dash app
 #app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+#app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.DARKLY],
+    meta_tags=[
+        {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1.0"
+        }
+    ],
+)
 server = app.server
 
 
