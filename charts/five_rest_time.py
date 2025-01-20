@@ -133,7 +133,9 @@ def create_rest_time_histogram(df: pd.DataFrame):
         x=x_vals,
         y=pdf_total_scaled,
         mode="lines",
-        line=dict(color="white", width=3, dash="dash")
+        line=dict(color="white", width=3, dash="dash"),
+        name=sum_label,
+        showlegend=False,  # This hides the trace from the legend
     )
 
     # Convert the px.histogram figure to graph_objects so we can add multiple traces
