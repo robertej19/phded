@@ -139,6 +139,8 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
 
         ),
         yaxis=dict(
+            #set yaxis limit from 400 to 600
+            range=[400, 600],
             title=f"{weight_col} (lbs)",
             title_font=dict(size=12),
             tickfont=dict(size=12) 

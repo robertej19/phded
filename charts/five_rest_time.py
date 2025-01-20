@@ -105,8 +105,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
 
     # (A) Component 1
     comp1_label = (
-        f"1st Mean Rest Time:<br>"
-        f"{means[0]:.1f} hours"
+        f"1st Mean Rest: {means[0]:.1f} hrs"
     )
     trace_comp1 = go.Scatter(
         x=x_vals,
@@ -118,8 +117,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
 
     # (B) Component 2
     comp2_label = (
-        f"2nd Mean Rest Time:<br>"
-        f"{means[1]:.1f} hours"
+        f"2nd Mean Rest: {means[1]:.1f} hrs"
     )
     trace_comp2 = go.Scatter(
         x=x_vals,
@@ -135,8 +133,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
         x=x_vals,
         y=pdf_total_scaled,
         mode="lines",
-        line=dict(color="white", width=3, dash="dash"),
-        name=sum_label,
+        line=dict(color="white", width=3, dash="dash")
     )
 
     # Convert the px.histogram figure to graph_objects so we can add multiple traces
@@ -147,6 +144,8 @@ def create_rest_time_histogram(df: pd.DataFrame):
 
     # ----------- 8) Position Legend Inside Plot -----------
     fig.update_layout(
+        #make yaxis limit 0 to 30
+        yaxis=dict(range=[0, 30]),
         legend=dict(
             x=0.02,    # left margin
             y=0.98,    # top margin

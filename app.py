@@ -167,10 +167,10 @@ app.layout = dbc.Container(
                         
                         html.P(
                             [
-                                f"{day_number} Days",
-                                html.Span(" | ", style={"margin": "0 20px"}),
-                                f"Most Recent Lift: {most_recent_lift} on {most_recent_date}",
-                                html.Span(" | ", style={"margin": "0 20px"}),
+                                f"{day_number} Days <br>",
+                                #html.Span(" | ", style={"margin": "0 20px"}),
+                                f"Most Recent Lift: {most_recent_lift} on {most_recent_date}<br>",
+                                #html.Span(" | ", style={"margin": "0 20px"}),
                                 f"Cumulative Top Set Weight Lifted: {total_weight_lifted:,} lbs",
                             ],
                             className="text-center fs-4"  # fs-4 for larger text
