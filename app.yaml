@@ -1,0 +1,11 @@
+runtime: python310
+
+# App Engine will install dependencies from requirements.txt by default.
+# Then it will run the command in 'entrypoint' to start your app.
+entrypoint: gunicorn -b :$PORT app:server
+
+# (Optional) If you need more memory or a different instance class,
+# you can configure them here. Example:
+# instance_class: F2
+# resources:
+#   memory_gb: 2
