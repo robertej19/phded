@@ -147,7 +147,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             r=am_counts_arr,
             theta=angles,
             width=angle_step,
-            marker_color="blue",
+            marker_color="green",
             name="AM 15-min bins",
         ),
         row=1, col=1

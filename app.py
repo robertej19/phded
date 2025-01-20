@@ -270,7 +270,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_time_circular,
-                     style={"width": "100%", "height": "auto"}
+                     style={"width": "100%", "height": "800px"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -382,9 +382,9 @@ def toggle_traces(selected_metrics):
     return fig
 
 
-# # # 6) Run
-# # if __name__ == "__main__":
-# #    app.run_server(debug=True)
+# 6) Run
+# # # if __name__ == "__main__":
+# # #    app.run_server(debug=True)
 
 #if __name__ == "__main__":
 #    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
