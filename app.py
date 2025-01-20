@@ -228,6 +228,7 @@ app.layout = dbc.Container(
                 dcc.Graph(
                     id="multi-scatter-graph",
                     figure=fig_multi,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}  # 10% L/R padding, taller plot
                 ),
                 width=12
@@ -247,7 +248,7 @@ app.layout = dbc.Container(
                     ],
                     value=["Average Weight"],
                     inline=True,
-                    labelStyle={"margin-right": "30px"}  # Increased spacing between options
+                    labelStyle={"margin-right": "10px"}  # Increased spacing between options
                 )
             ]
         ),
@@ -256,6 +257,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_2d_hist,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -266,6 +268,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_time_circular,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -275,6 +278,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_day_vs_time_of_day,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -285,6 +289,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_rest_time,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -296,6 +301,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_dwt,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -306,6 +312,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_dwt2,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12
@@ -316,6 +323,7 @@ app.layout = dbc.Container(
             dbc.Col(
                 dcc.Graph(
                     figure=fig_oneday,
+                     style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
                 ),
                 width=12

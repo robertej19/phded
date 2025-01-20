@@ -91,7 +91,9 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
         hour = 12 if hour == 0 else hour
         return f"{hour}:{minute:02d} {period}"
 
-    time_labels = [decimal_hour_to_ampm(x) for x in xcenters]
+    #time_labels = [decimal_hour_to_ampm(x) for x in xcenters]
+    #Only include every third time label
+    time_labels = [decimal_hour_to_ampm(x) if i % 3 == 0 else "" for i, x in enumerate(xcenters)]
 
     # 8) Create hover text as 2D array
     hover_text = np.full(H.shape, "", dtype=object)

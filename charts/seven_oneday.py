@@ -77,6 +77,7 @@ def create_histogram_with_toggles(df):
         )
 
     fig.update_layout(
+        
         updatemenus=[
             dict(
                 type="buttons",

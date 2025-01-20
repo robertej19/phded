@@ -105,8 +105,8 @@ def create_rest_time_histogram(df: pd.DataFrame):
 
     # (A) Component 1
     comp1_label = (
-        f"Gaussian 1<br>"
-        f"μ={means[0]:.1f}, σ={stdevs[0]:.1f}, w={weights[0]:.2f}"
+        f"1st Mean Rest Time:<br>"
+        f"{means[0]:.1f} hours"
     )
     trace_comp1 = go.Scatter(
         x=x_vals,
@@ -118,8 +118,8 @@ def create_rest_time_histogram(df: pd.DataFrame):
 
     # (B) Component 2
     comp2_label = (
-        f"Gaussian 2<br>"
-        f"μ={means[1]:.1f}, σ={stdevs[1]:.1f}, w={weights[1]:.2f}"
+        f"2nd Mean Rest Time:<br>"
+        f"{means[1]:.1f} hours"
     )
     trace_comp2 = go.Scatter(
         x=x_vals,

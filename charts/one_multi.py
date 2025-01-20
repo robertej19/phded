@@ -114,7 +114,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
             size=12,  # Increase font size globally
         ),
         title=dict(
-            text="Comparison of Effective, Average, and Top Set",
+            text="Deadlifts Over Time",
             font=dict(size=12)  # Increase title font size
         ),
         xaxis=dict(

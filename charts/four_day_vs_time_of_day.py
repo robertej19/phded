@@ -87,7 +87,7 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
             y=df["DecimalHour"],
             mode="markers",
             marker=dict(
-                size=8,
+                size=3,
                 color=df[weight_col],
                 colorscale="Viridis",
                 cmin=w_min,

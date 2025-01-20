@@ -170,7 +170,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     # -------------------------------------------------------------------------
     fig.update_layout(
         title=dict(
-            text="Radial Plot (15-min Bins): Hourly Count of Lifts (AM vs. PM)",
+            text="Number of Lifts Across Time of Day",
             font=dict(size=12)  # Title font size
         ),
         showlegend=False,
