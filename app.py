@@ -340,6 +340,10 @@ app.layout = dbc.Container(
         #         width=12
         #     )
         # ),
+        
+        #add extra padding at the bottom
+        html.Div(style={"padding": "400px 0"})
+
     ]
 )
 
