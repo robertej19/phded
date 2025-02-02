@@ -6,15 +6,16 @@ import pandas as pd
 import numpy as np
 
 # 2) Import specific chart modules
-from charts.charts_1_multi import create_multi_weight_scatter
-from charts.charts_2_time_vs_weight_2d import create_time_vs_weight_2d
-from charts.charts_3_time_circles import create_am_pm_radial_time_plot
-from charts.four_day_vs_time_of_day import create_day_vs_time_of_day
-from charts.five_rest_time import create_rest_time_histogram
+from charts.chart_1_multi import create_multi_weight_scatter
+from charts.chart_2_time_vs_weight_2d import create_time_vs_weight_2d
+from charts.chart_3_time_circles import create_am_pm_radial_time_plot
+from charts.chart_4_day_vs_time import create_day_vs_time_of_day
+from charts.chart_5_rest_time import create_rest_time_histogram
+from charts.chart_6_day_week_time import create_day_of_week_vs_weight_with_labels
+from charts.chart_6_day_week_time import create_day_of_week_vs_time_am_pm
+
 from charts.six_multibool import create_boolean_grip_heatmap
-from charts.seven_oneday import create_histogram_with_toggles
-from charts.eight_day_week_time import create_day_of_week_vs_weight_with_labels
-from charts.eight_day_week_time import create_day_of_week_vs_time_am_pm
+from charts.chart_7_1D_histograms import create_histogram_with_toggles
 
 from utils.data import load_data, is_data_stale
 
@@ -255,7 +256,27 @@ app.layout = dbc.Container(
             )
         ),
 
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_time_circular,
+                    style={
+                        "height": "125vw"  # Height equals 100% of the viewport width
+                    },
+                ),
+            )
+        ),
 
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_rest_time,
+                     style={"width": "100%", "height": "auto"}
+                    #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
+                width=12
+            )
+        ),
 
         dbc.Row(
             dbc.Col(
@@ -268,16 +289,7 @@ app.layout = dbc.Container(
             )
         ),
 
-        dbc.Row(
-            dbc.Col(
-                dcc.Graph(
-                    figure=fig_time_circular,
-                    style={
-                        "height": "125vw"  # Height equals 100% of the viewport width
-                    },
-                ),
-            )
-        ),
+
 
 
         dbc.Row(

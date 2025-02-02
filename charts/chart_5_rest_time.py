@@ -17,7 +17,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
     4) Places the legend inside the chart, showing mixture parameters (means, stdevs, weights).
     """
 
-    # ----------- 1) Check columns & sort data -----------
+    # ----------- 1) Check columns & sort data ----------- #
     required_cols = {"Day Number", "DecimalHour"}
     if not required_cols.issubset(df.columns):
         raise ValueError(f"DataFrame must contain {required_cols} columns.")
@@ -25,7 +25,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
     # Sort by day number, then time
     df = df.sort_values(["Day Number", "DecimalHour"]).reset_index(drop=True)
 
-    # ----------- 2) Compute 'Rest Time' -----------
+    # ----------- 2) Compute 'Rest Time' ----------- #
     df["Rest Time"] = np.nan
     for i in range(1, len(df)):
         curr_day = df.loc[i, "Day Number"]
@@ -39,7 +39,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
     # We only want rows that have a valid Rest Time
     hist_df = df.dropna(subset=["Rest Time"])
 
-    # ----------- 3) Build the Histogram (0..48, 1-hr bins) -----------
+    # ----------- 3) Build the Histogram (0..48, 1-hr bins) ----------- #
     fig = px.histogram(
         hist_df,
         x="Rest Time",
@@ -47,27 +47,10 @@ def create_rest_time_histogram(df: pd.DataFrame):
         nbins=48,         # 1-hour bins
         title="Histogram of Rest Time (hours)",
     )
-    # Make it dark-themed & enlarge fonts
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0, 0, 0, 0)",
-        plot_bgcolor="rgba(0, 0, 0, 0)",
-        font=dict(size=18),
-        title=dict(font=dict(size=12)),
-        xaxis=dict(
-            title="Rest Time (hours)",
-            title_font=dict(size=12),
-            tickfont=dict(size=16),
-            range=[0, 48],
-        ),
-        yaxis=dict(
-            title="Count",
-            title_font=dict(size=12),
-            tickfont=dict(size=16),
-        ),
-    )
+    # Update histogram trace color
+    fig.update_traces(marker_color="blue")
 
-    # ----------- 4) Fit a 2-Component Gaussian Mixture -----------
+    # ----------- 4) Fit a 2-Component Gaussian Mixture ----------- #
     X = hist_df["Rest Time"].values.reshape(-1, 1)
     gm = GaussianMixture(n_components=2, random_state=42)
     gm.fit(X)
@@ -77,8 +60,8 @@ def create_rest_time_histogram(df: pd.DataFrame):
     covars = gm.covariances_.flatten()
     stdevs = np.sqrt(covars)
 
-    # ----------- 5) Evaluate PDF (0..48) -----------
-    x_vals = np.linspace(0, 48, 400)  # more points for smoother lines
+    # ----------- 5) Evaluate PDF (0..48) ----------- #
+    x_vals = np.linspace(0, 48, 400)  # More points for smoother lines
     pdf_total = np.zeros_like(x_vals)
     pdf_components = []
 
@@ -92,7 +75,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
         pdf_total += pdf_comp
         pdf_components.append(pdf_comp)
 
-    # ----------- 6) Scale PDF to match histogram (counts) -----------
+    # ----------- 6) Scale PDF to match histogram (counts) ----------- #
     bin_width = 1.0
     total_samples = len(X)
     scale_factor = total_samples * bin_width
@@ -100,13 +83,9 @@ def create_rest_time_histogram(df: pd.DataFrame):
     pdf_total_scaled = pdf_total * scale_factor
     pdf_components_scaled = [pc * scale_factor for pc in pdf_components]
 
-    # ----------- 7) Create separate traces for each component + total -----------
-    # We'll show each component with its own color, plus a sum in a different style.
-
+    # ----------- 7) Create separate traces for each component + total ----------- #
     # (A) Component 1
-    comp1_label = (
-        f"1st Mean Rest: {means[0]:.1f} hrs"
-    )
+    comp1_label = f"1st Mean Rest: {means[0]:.1f} hrs"
     trace_comp1 = go.Scatter(
         x=x_vals,
         y=pdf_components_scaled[0],
@@ -116,9 +95,7 @@ def create_rest_time_histogram(df: pd.DataFrame):
     )
 
     # (B) Component 2
-    comp2_label = (
-        f"2nd Mean Rest: {means[1]:.1f} hrs"
-    )
+    comp2_label = f"2nd Mean Rest: {means[1]:.1f} hrs"
     trace_comp2 = go.Scatter(
         x=x_vals,
         y=pdf_components_scaled[1],
@@ -128,35 +105,60 @@ def create_rest_time_histogram(df: pd.DataFrame):
     )
 
     # (C) Total (sum) PDF
-    sum_label = "Total PDF"
     trace_sum = go.Scatter(
         x=x_vals,
         y=pdf_total_scaled,
         mode="lines",
         line=dict(color="white", width=3, dash="dash"),
-        name=sum_label,
-        showlegend=False,  # This hides the trace from the legend
+        name="Total PDF",
+        showlegend=False,
     )
 
-    # Convert the px.histogram figure to graph_objects so we can add multiple traces
-    fig = fig.update_traces(marker_color="blue")  # e.g. set histogram color
+    # Add the Gaussian mixture traces to the histogram
     fig.add_trace(trace_comp1)
     fig.add_trace(trace_comp2)
     fig.add_trace(trace_sum)
 
-    # ----------- 8) Position Legend Inside Plot -----------
+    # ----------- 8) Position Legend Inside Plot ----------- #
     fig.update_layout(
-        #make yaxis limit 0 to 30
-        yaxis=dict(range=[0, 30]),
+        autosize=True,
+        # Use larger fonts and high-contrast colors for readability
+        font=dict(
+            family="Arial, sans-serif",
+            size=18,
+            color="#FFFFFF"
+        ),
+        title=dict(
+            text="Histogram of Rest Time (hours)",
+            font=dict(size=28, color="#FFFFFF")
+        ),
+        xaxis=dict(
+            title=dict(
+                text="Rest Time (hours)",
+                font=dict(size=20, color="#FFFFFF")
+            ),
+            tickfont=dict(size=16, color="#FFFFFF"),
+            range=[0, 48]
+        ),
+        yaxis=dict(
+            title=dict(
+                text="# of Days",
+                font=dict(size=30, color="#FFFFFF")
+            ),
+            tickfont=dict(size=16, color="#FFFFFF")
+        ),
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
         legend=dict(
-            x=0.02,    # left margin
-            y=0.98,    # top margin
+            x=0.02,
+            y=0.98,
             xanchor="left",
             yanchor="top",
-            bgcolor="rgba(0,0,0,0)",    # transparent legend
+            bgcolor="rgba(0,0,0,0)",
             bordercolor="white",
             borderwidth=1,
-            font=dict(size=14),
+            font=dict(size=14, color="#FFFFFF")
         )
     )
 

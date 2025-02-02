@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
 
+
 def create_histogram_with_toggles(df):
     """
     Create a 1D histogram with togglable traces for:
@@ -8,13 +9,12 @@ def create_histogram_with_toggles(df):
       - Average Weight
       - Effective Weight
     """
-
     # 1) Define which columns you want to show
     metrics = [
         {"label": "Number of Reps",    "col": "Number of Reps"},
-        {"label": "Top Set Weight",   "col": "Top Set Weight"},
-        {"label": "Average Weight",   "col": "Average Weight"},
-        {"label": "Effective Weight", "col": "Effective Weight"},
+        {"label": "Top Set Weight",      "col": "Top Set Weight"},
+        {"label": "Average Weight",      "col": "Average Weight"},
+        {"label": "Effective Weight",    "col": "Effective Weight"},
     ]
 
     # Metrics that require x-axis limits to be set to 400-600
@@ -25,43 +25,40 @@ def create_histogram_with_toggles(df):
 
     for i, m in enumerate(metrics):
         col_name = m["col"]
-
         # Only build the trace if the column exists in df
         if col_name not in df.columns:
             continue
 
-        # Build the histogram trace with customized hover labels
         fig.add_trace(
             go.Histogram(
                 x=df[col_name],
                 name=m["label"],
                 visible=True if i == 0 else False,  # Show only the first trace by default
-                opacity=0.6,  # Slight transparency so overlapping hist can be seen
-                nbinsx=20,     # Set number of bins
+                opacity=0.6,  # Slight transparency so overlapping histograms can be seen
+                nbinsx=20,    # Set number of bins
                 hovertemplate="%{x0} - %{x1} %{name}<br>%{y} lifts",  # Customized hover label
             )
         )
 
     # 3) Create updatemenus (buttons) for toggling traces
-    # Each button toggles a single trace "visible", hiding the others
     buttons = []
     for i, m in enumerate(metrics):
-        # We create a list of True/False for each trace
+        # Build a list of True/False values for each trace (only the current one is visible)
         visible_array = [False] * len(metrics)
-        visible_array[i] = True  # Show the i-th trace
+        visible_array[i] = True
 
-        # Prepare layout updates
+        # Prepare layout updates for the current trace
         layout_updates = {
             "xaxis.title.text": m["label"],
             "title": f"Distribution of {m['label']}"
         }
 
-        # Set x-axis and y-axis range if the metric requires it
+        # Set custom x- and y-axis ranges for certain metrics
         if m["label"] in metrics_with_custom_xlim:
             layout_updates["xaxis.range"] = [400, 600]
             layout_updates["yaxis.range"] = [0, 180]
         else:
-            # Set default ranges for other metrics
+            # Default ranges for other metrics
             layout_updates["xaxis.range"] = [0, 10]
             layout_updates["yaxis.range"] = [0, 500]
 
@@ -77,14 +74,13 @@ def create_histogram_with_toggles(df):
         )
 
     fig.update_layout(
-        
         updatemenus=[
             dict(
                 type="buttons",
                 buttons=buttons,
-                direction="down",       # or "left", if you want horizontal
+                direction="down",       # You can change to "left" for horizontal layout
                 showactive=True,
-                x=1.15,                 # adjust placement as needed
+                x=1.15,                 # Adjust placement as needed
                 y=0.5,
                 xanchor="left",
                 yanchor="middle",
@@ -94,18 +90,29 @@ def create_histogram_with_toggles(df):
                 ),
             )
         ],
-        title="Distribution of Parameters",
+        title="Distribution of Number of Reps",
         font=dict(
-            size=12  # Increase font size everywhere
+            family="Arial, sans-serif",
+            size=18,         # Increased global base font size
+            color="#FFFFFF"  # White text for dark theme
         ),
-        barmode="overlay",  # So multiple hist traces can overlap
-        template="plotly_dark",      # if you want a dark theme
-        paper_bgcolor="rgba(0,0,0,0)",  # transparent backgrounds
+        barmode="overlay",  # So multiple histogram traces can overlap
+        template="plotly_dark",      # Dark theme
+        paper_bgcolor="rgba(0,0,0,0)",  # Transparent background
         plot_bgcolor="rgba(0,0,0,0)",
+        autosize=True,
     )
 
-    # (Optional) further axis formatting
-    fig.update_xaxes(title_text="Value")
-    fig.update_yaxes(title_text="Number of Lifts")
+    # Optional: Further axis formatting with increased font sizes
+    fig.update_xaxes(
+        title_text="Value",
+        title_font=dict(size=20, color="#FFFFFF"),
+        tickfont=dict(size=16, color="#FFFFFF")
+    )
+    fig.update_yaxes(
+        title_text="Number of Lifts",
+        title_font=dict(size=20, color="#FFFFFF"),
+        tickfont=dict(size=16, color="#FFFFFF")
+    )
 
     return fig

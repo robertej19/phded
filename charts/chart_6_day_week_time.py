@@ -3,14 +3,18 @@ import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
 def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
     """
     Creates a 2D histogram (Heatmap) of Day of Week (x-axis) vs Time of Day (y-axis).
-    - Time of Day is binned in half-hour increments (0.5 hr).
-    - The x-axis day labels are centered on their bins.
-    - Hover labels display "Monday\n9:00 AM - 9:30 AM\nN lifts".
+      - Time of Day is binned in half-hour increments (0.5 hr).
+      - The x-axis day labels are centered on their bins.
+      - Hover labels display "Monday<br>9:00 AM - 9:30 AM<br>N lifts".
     """
-
     # --------------------
     # 1) Prepare Data
     # --------------------
@@ -66,12 +70,11 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
     ]
 
     # --------------------
-    # 5) Bin Centers
+    # 5) Bin Centers & Labels
     # --------------------
     xcenters = 0.5 * (xedges[:-1] + xedges[1:])  # day-of-week centers
     ycenters = 0.5 * (yedges[:-1] + yedges[1:])  # time-of-day centers
 
-    # Day labels
     day_labels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
     # Helper to format decimal hours as HH:MM AM/PM
@@ -79,7 +82,7 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
         hour = int(decimal_hour)
         minute = int(round((decimal_hour - hour) * 60))
         period = "AM" if hour < 12 else "PM"
-        # If hour == 24, reset to 0.. though that is rarely used
+        # If hour == 24, reset to 0
         if hour == 24:
             hour = 0
             period = "AM"
@@ -90,8 +93,6 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
     # --------------------
     # 6) Build Hover Text (2D)
     # --------------------
-    # z=H.T implies H is [xbin, ybin], so row->y, col->x in the final display.
-    # We must build hover_text[y_index][x_index].
     hover_text = []
     for j in range(len(ycenters)):      # y-axis index
         row_text = []
@@ -99,17 +100,11 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
         time_start = decimal_hour_to_ampm(yedges[j])
         time_end   = decimal_hour_to_ampm(yedges[j+1])
         for i in range(len(xcenters)):  # x-axis index
-            # Day label
-            day_index = int(xcenters[i])  # e.g. 0.5 -> day=0 => Monday
-            if day_index < 0 or day_index >= len(day_labels):
-                day_str = "Unknown"
-            else:
-                day_str = day_labels[day_index]
-            count = H[i, j]  # Because H is [xbin, ybin]
-            if np.isnan(count):
-                count_str = "0 lifts"
-            else:
-                count_str = f"{int(count)} lifts"
+            # Day label from day index (e.g., 0.5 -> day=0 => Monday)
+            day_index = int(xcenters[i])
+            day_str = day_labels[day_index] if 0 <= day_index < len(day_labels) else "Unknown"
+            count = H[i, j]
+            count_str = "0 lifts" if np.isnan(count) else f"{int(count)} lifts"
             row_text.append(f"{day_str}<br>{time_start} - {time_end}<br>{count_str}")
         hover_text.append(row_text)
 
@@ -123,8 +118,8 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
         colorscale=viridis_colors,
         colorbar=dict(
             title="Count",
-            title_font=dict(size=12),
-            tickfont=dict(size=12)
+            title_font=dict(size=16, color="#FFFFFF"),
+            tickfont=dict(size=16, color="#FFFFFF")
         ),
         hoverinfo="text",
         text=hover_text  # 2D list matching z
@@ -134,29 +129,35 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
     tickvals_4h = np.arange(0, 25, 4)
     ticktext_4h = [decimal_hour_to_ampm(t) for t in tickvals_4h]
 
+    # --------------------
+    # 8) Update Layout with Larger Fonts and Transparent Backgrounds
+    # --------------------
     fig.update_layout(
-        title="Day of Week vs. Time of Day",
+        autosize=True,
+        title=dict(
+            text="Day of Week vs. Time of Day",
+            font=dict(size=28, color="#FFFFFF")
+        ),
         xaxis=dict(
             tickmode="array",
-            tickvals=xcenters,         # Centered day labels
-            ticktext=day_labels,       # 7 labels for Mon..Sun
-            title="Day of Week",
-            title_font=dict(size=12),
-            tickfont=dict(size=12),
-            range=[0, 7.0]          # So we see Monday..Sunday nicely
+            tickvals=xcenters,
+            ticktext=day_labels,
+            title=dict(text="Day of Week", font=dict(size=20, color="#FFFFFF")),
+            tickfont=dict(size=16, color="#FFFFFF"),
+            range=[0, 7.0]
         ),
         yaxis=dict(
             tickmode="array",
-            tickvals=tickvals_4h,      # Show tick marks every 4 hrs
+            tickvals=tickvals_4h,
             ticktext=ticktext_4h,
-            title="Time of Day",
-            title_font=dict(size=12),
-            tickfont=dict(size=12),
+            title=dict(text="Time of Day", font=dict(size=20, color="#FFFFFF")),
+            tickfont=dict(size=16, color="#FFFFFF"),
             range=[0, 24]
         ),
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=18, color="#FFFFFF")
     )
 
     return fig
@@ -165,13 +166,10 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
 def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
     """
     Creates a 2D histogram (Heatmap) of Day of Week (x-axis) vs Top Set Weight (y-axis),
-    with centered day labels, custom hover label of the form:
-      Monday
-      Weight: 425 lbs
-      N lifts
-    And y-axis limited to 400..600 lbs.
+    with centered day labels and custom hover labels in the form:
+      Monday<br>Weight: 425 lbs<br>N lifts
+    The y-axis is limited to 400..600 lbs.
     """
-
     # --------------------
     # 1) Prepare Data
     # --------------------
@@ -185,7 +183,7 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
     # 2) Define Bins
     # --------------------
     day_bins = np.arange(0, 8, 1)                # 0..7 integer edges
-    weight_bins = np.arange(400, 610, 10)        # 400..600 in 10-lb steps
+    weight_bins = np.arange(400, 610, 10)          # 400..600 in 10-lb steps
 
     # --------------------
     # 3) 2D Histogram
@@ -208,7 +206,7 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
     ]
 
     # --------------------
-    # 5) Bin Centers
+    # 5) Bin Centers & Labels
     # --------------------
     xcenters = 0.5 * (xedges[:-1] + xedges[1:])  # day-of-week centers
     ycenters = 0.5 * (yedges[:-1] + yedges[1:])  # weight centers
@@ -221,19 +219,13 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
     hover_text = []
     for j in range(len(ycenters)):       # y index
         row_text = []
-        w_start = int(yedges[j])         # e.g., 400
-        w_end   = int(yedges[j+1])       # e.g., 410
+        w_start = int(yedges[j])
+        w_end   = int(yedges[j+1])
         for i in range(len(xcenters)):   # x index
-            day_index = int(xcenters[i])  # e.g., 0.5 -> 0 => Monday
-            if day_index < 0 or day_index >= len(day_labels):
-                day_str = "Unknown"
-            else:
-                day_str = day_labels[day_index]
+            day_index = int(xcenters[i])
+            day_str = day_labels[day_index] if 0 <= day_index < len(day_labels) else "Unknown"
             count = H[i, j]
-            if np.isnan(count):
-                count_str = "0 lifts"
-            else:
-                count_str = f"{int(count)} lifts"
+            count_str = "0 lifts" if np.isnan(count) else f"{int(count)} lifts"
             row_text.append(f"{day_str}<br>Weight: {w_start} lbs<br>{count_str}")
         hover_text.append(row_text)
 
@@ -243,37 +235,43 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
     fig = go.Figure(data=go.Heatmap(
         x=xcenters,
         y=ycenters,
-        z=H.T,            # transpose
+        z=H.T,            # Transpose for correct orientation
         colorscale=viridis_colors,
         colorbar=dict(
             title="Count",
-            title_font=dict(size=12),
-            tickfont=dict(size=12)
+            title_font=dict(size=16, color="#FFFFFF"),
+            tickfont=dict(size=16, color="#FFFFFF")
         ),
         hoverinfo="text",
-        text=hover_text    # 2D list
+        text=hover_text    # 2D list of hover text
     ))
 
+    # --------------------
+    # 8) Update Layout with Larger Fonts and Transparent Backgrounds
+    # --------------------
     fig.update_layout(
-        title="Day of Week vs. Top Set Weight",
+        autosize=True,
+        title=dict(
+            text="Day of Week vs. Top Set Weight",
+            font=dict(size=28, color="#FFFFFF")
+        ),
         xaxis=dict(
             tickmode="array",
-            tickvals=xcenters,          # center day labels
-            ticktext=day_labels,        # Monday..Sunday
-            title="Day of Week",
-            title_font=dict(size=12),
-            tickfont=dict(size=12),
+            tickvals=xcenters,
+            ticktext=day_labels,
+            title=dict(text="Day of Week", font=dict(size=20, color="#FFFFFF")),
+            tickfont=dict(size=16, color="#FFFFFF"),
             range=[0, 7.0]
         ),
         yaxis=dict(
-            title="Top Set Weight (lbs)",
-            title_font=dict(size=12),
-            tickfont=dict(size=12),
-            range=[400, 600]  # Enforce 400..600
+            title=dict(text="Top Set Weight (lbs)", font=dict(size=20, color="#FFFFFF")),
+            tickfont=dict(size=16, color="#FFFFFF"),
+            range=[400, 600]
         ),
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial, sans-serif", size=18, color="#FFFFFF")
     )
 
     return fig

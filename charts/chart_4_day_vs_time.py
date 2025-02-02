@@ -111,38 +111,39 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
 
     # --------- Set up axis ranges, labels, and layout --------- #
     fig.update_layout(
+        autosize=True,
+        font=dict(
+            family="Arial, sans-serif",
+            size=16,         # Global base font size
+            color="#FFFFFF"
+        ),
         title=dict(
             text="Day Number vs. Time of Day",
-            font=dict(size=12)
+            font=dict(size=28, color="#FFFFFF")
         ),
         xaxis=dict(
-            title="Day Number",
-            title_font=dict(size=12),
-            tickfont=dict(size=16)
+            title=dict(
+                text="Day Number",
+                font=dict(size=20, color="#FFFFFF")
+            ),
+            tickfont=dict(size=16, color="#FFFFFF")
         ),
         yaxis=dict(
-            title="Time of Day",
+            title=dict(
+                text="Time of Day",
+                font=dict(size=20, color="#FFFFFF")
+            ),
             tickmode="array",
             tickvals=[0, 4, 8, 12, 16, 20, 24],
             ticktext=["12 AM", "4 AM", "8 AM", "12 PM", "4 PM", "8 PM", "12 AM"],
+            tickfont=dict(size=16, color="#FFFFFF"),
             range=[0, 24]
         ),
-        #template="plotly_white"
-        #template="plotly_dark"
         template="plotly_dark",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        plot_bgcolor="rgba(0, 0, 0, 0)",
-
+        plot_bgcolor="rgba(0, 0, 0, 0)"
     )
+
 
     return fig
 
-# Example usage (if you want to run this file directly):
-# if __name__ == "__main__":
-#     df = pd.DataFrame({
-#         "Date": pd.date_range("2023-01-01", periods=10, freq="D"),
-#         "Time": ["800", "1200", "1745", "530", "2130", "110", "2359", "0", "1630", "745"],
-#         "Top Set Weight": [135, 185, 225, 135, 200, 210, 225, 155, 245, 220],
-#     })
-#     fig = create_day_vs_time_scatter(df)
-#     fig.show()

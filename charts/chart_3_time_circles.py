@@ -3,6 +3,11 @@ import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
+import numpy as np
+import pandas as pd
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
 def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     """
     Creates two radial (polar) plots arranged vertically:
@@ -13,9 +18,11 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     Hour labels appear every 4 bins (i.e. every hour) and both plots share the same
     maximum radial range for easy comparison.
     
+    On hover, the time slice for that bin and the number of lifts are displayed.
+    
     Updates:
       - Larger, high-contrast fonts for all text elements.
-      - Each radial plot is explicitly set to extend 80% of the page width.
+      - Each polar plot is extended to use the full width of the figure.
     """
     # -------------------------------------------------------------------------
     # 1) Convert 'Time' -> 'DecimalHour' if not already present.
@@ -107,8 +114,35 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         pm_ticktext.append(label)
 
     # -------------------------------------------------------------------------
-    # 7) Create the subplot with two polar charts arranged vertically
+    # 7) Create custom hover text for each quarter-hour bin.
     # -------------------------------------------------------------------------
+    # Helper to convert a decimal hour to an AM/PM string.
+    def decimal_hour_to_ampm(decimal_hour):
+        hour = int(decimal_hour)
+        minute = int(round((decimal_hour - hour) * 60))
+        period = "AM" if decimal_hour < 12 else "PM"
+        hour_12 = hour % 12
+        hour_12 = 12 if hour_12 == 0 else hour_12
+        return f"{hour_12}:{minute:02d} {period}"
+
+    def quarter_bin_to_time_range_am(bin_index):
+        start = bin_index / 4.0
+        end = (bin_index + 1) / 4.0
+        return f"{decimal_hour_to_ampm(start)} - {decimal_hour_to_ampm(end)}"
+
+    def quarter_bin_to_time_range_pm(bin_index):
+        start = bin_index / 4.0 + 12
+        end = (bin_index + 1) / 4.0 + 12
+        return f"{decimal_hour_to_ampm(start)} - {decimal_hour_to_ampm(end)}"
+
+    # Build custom data arrays for hover text.
+    am_customdata = [quarter_bin_to_time_range_am(i) for i in range(n_bins)]
+    pm_customdata = [quarter_bin_to_time_range_pm(i) for i in range(n_bins)]
+
+    # -------------------------------------------------------------------------
+    # 8) Create the subplot with two polar charts arranged vertically
+    # -------------------------------------------------------------------------
+    from plotly.subplots import make_subplots
     fig = make_subplots(
         rows=2,
         cols=1,
@@ -116,6 +150,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                [{"type": "polar"}]]
     )
 
+    # Add AM trace with custom hover data.
     fig.add_trace(
         go.Barpolar(
             r=am_counts_arr,
@@ -123,10 +158,13 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             width=angle_step,
             marker_color="green",
             name="AM 15-min bins",
+            customdata=am_customdata,
+            hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
         ),
         row=1, col=1
     )
 
+    # Add PM trace with custom hover data.
     fig.add_trace(
         go.Barpolar(
             r=pm_counts_arr,
@@ -134,17 +172,19 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             width=angle_step,
             marker_color="firebrick",
             name="PM 15-min bins",
+            customdata=pm_customdata,
+            hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
         ),
         row=2, col=1
     )
 
     # -------------------------------------------------------------------------
-    # 8) Set the same maximum radial range for both polar plots for easy comparison
+    # 9) Set the same maximum radial range for both polar plots for easy comparison
     # -------------------------------------------------------------------------
     max_val = float(max(am_counts_arr.max(), pm_counts_arr.max()))
 
     # -------------------------------------------------------------------------
-    # 9) Update layout with larger fonts and extended polar domains (80% of page width)
+    # 10) Update layout with larger fonts and extended polar domains
     # -------------------------------------------------------------------------
     fig.update_layout(
         autosize=True,
@@ -161,7 +201,6 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         template="plotly_dark",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
-        # Extend each polar plot to use the full width of the figure
         polar=dict(
             radialaxis=dict(
                 showticklabels=False,
@@ -172,7 +211,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                 tickmode="array",
                 tickvals=am_tickvals,
                 ticktext=am_ticktext,
-                tickfont=dict(size=16, color="#FFFFFF"),
+                tickfont=dict(size=22, color="#FFFFFF"),
                 direction="clockwise",
                 rotation=90
             )
@@ -187,7 +226,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                 tickmode="array",
                 tickvals=pm_tickvals,
                 ticktext=pm_ticktext,
-                tickfont=dict(size=16, color="#FFFFFF"),
+                tickfont=dict(size=22, color="#FFFFFF"),
                 direction="clockwise",
                 rotation=90
             )
