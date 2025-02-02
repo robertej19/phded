@@ -18,38 +18,33 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
         mil_time_str = mil_time_str.replace(":", "")
         try:
             # Convert to float to handle "1436.0", then to int
-            t = int(float(mil_time_str))  
+            t = int(float(mil_time_str))
             hh = t // 100
             mm = t % 100
             return hh + mm / 60.0
         except:
             return np.nan
 
-    # 1) Determine which weight column to use
-    #    Customize as needed, e.g. "Top Set Weight" or "Average Weight"
-    weight_col = "Top Set Weight" 
+    # 1) Determine which weight column to use (customize as needed)
+    weight_col = "Top Set Weight"
     if weight_col not in df.columns:
-        # Fallback to "Average Weight" if "Top Set Weight" not found
         weight_col = "Average Weight"
         if weight_col not in df.columns:
             raise ValueError("No valid weight column found (e.g., 'Top Set Weight' or 'Average Weight').")
 
-    # Ensure "Time" is string, then parse
+    # Ensure "Time" is a string and convert to DecimalHour
     df["Time"] = df["Time"].astype(str)
     print(df["Time"])
-
     df["DecimalHour"] = df["Time"].apply(to_decimal_hours)
 
-    # 2) Drop rows with invalid time or weight
+    # 2) Drop rows with invalid time or weight data
     df = df.dropna(subset=["DecimalHour", weight_col])
 
-    # 3) Prepare bin edges
-    #    Time bins: 1.0 hour increments from 0..24
+    # 3) Prepare bin edges for time and weight
     time_min, time_max = 0, 24
     time_bin_width = 1.0
     time_bins = np.arange(time_min, time_max + time_bin_width, time_bin_width)
 
-    #    Weight bins: 10 lb increments from min to max
     w_min = df[weight_col].min()
     w_max = df[weight_col].max()
     w_min_10 = 10 * np.floor(w_min / 10)  # Round down to nearest 10
@@ -62,18 +57,16 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
         y=df[weight_col],
         bins=[time_bins, weight_bins]
     )
-
-    # Set zeros to NaN for "bad" values
+    # Set zeros to NaN for better visualization (bad values rendered as white)
     H = np.where(H == 0, np.nan, H)
 
-    # 5) Define bin centers for Plotly heatmap
+    # 5) Define bin centers for the heatmap
     xcenters = 0.5 * (xedges[:-1] + xedges[1:])
     ycenters = 0.5 * (yedges[:-1] + yedges[1:])
 
-    # 6) Use matplotlib colormap with set_bad("white")
+    # 6) Create a Plotly colorscale from a matplotlib colormap (viridis)
     viridis = plt.cm.viridis.copy()
-    viridis.set_bad("white")  # Set NaN (bad) values to white
-    # Convert matplotlib colormap to Plotly colorscale
+    viridis.set_bad("white")  # Set NaN values to white
     plotly_colorscale = [
         [i / 255.0, f"rgb({r},{g},{b})"]
         for i, (r, g, b, _) in enumerate((viridis(np.linspace(0, 1, 256)) * 255).astype(int))
@@ -81,25 +74,20 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
 
     # 7) Format time bins in AM/PM format
     def decimal_hour_to_ampm(decimal_hour):
-        """
-        Convert a decimal hour (e.g., 15.5) to a formatted AM/PM string (e.g., "3:30 PM").
-        """
         hour = int(decimal_hour)
         minute = int(round((decimal_hour - hour) * 60))
         period = "AM" if hour < 12 else "PM"
         hour = hour % 12
         hour = 12 if hour == 0 else hour
         return f"{hour}:{minute:02d} {period}"
-
-    #time_labels = [decimal_hour_to_ampm(x) for x in xcenters]
-    #Only include every third time label
+    
+    # Only display every third label for clarity
     time_labels = [decimal_hour_to_ampm(x) if i % 3 == 0 else "" for i, x in enumerate(xcenters)]
 
-    # 8) Create hover text as 2D array
+    # 8) Create hover text for each bin as a 2D array
     hover_text = np.full(H.shape, "", dtype=object)
-
-    for i in range(len(xcenters)):  # time bins
-        for j in range(len(ycenters)):  # weight bins
+    for i in range(len(xcenters)):  # Iterate over time bins
+        for j in range(len(ycenters)):  # Iterate over weight bins
             count = H[i, j]
             if not np.isnan(count):
                 time_range = f"{decimal_hour_to_ampm(xedges[i])} - {decimal_hour_to_ampm(xedges[i + 1])}"
@@ -107,49 +95,61 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
                 day_text = f"{int(count)} lift" if count == 1 else f"{int(count)} lifts"
                 hover_text[i, j] = f"{time_range}<br>{weight_range}<br>{day_text}"
 
-    # 9) Build Heatmap
+    # 9) Build the Heatmap
     fig = go.Figure(
         data=go.Heatmap(
             x=xcenters,
             y=ycenters,
             z=H.T,  # Transpose to match Plotly's row-column convention
             colorscale=plotly_colorscale,
-            colorbar=dict(title="Count"),
-            zmin=0,  # Ensure valid range for colormap
-            text=hover_text.T,  # Transpose to align with z=H.T
-            hovertemplate="%{text}<extra></extra>",  # Use custom hover text
+            colorbar=dict(
+                title="Count",
+                titlefont=dict(size=16, color="#FFFFFF"),
+                tickfont=dict(size=16, color="#FFFFFF")
+            ),
+            zmin=0,
+            text=hover_text.T,  # Transpose to align with z
+            hovertemplate="%{text}<extra></extra>",
         )
     )
 
-    # 10) Update layout with formatted time labels
+    # 10) Update layout with enhanced, responsive font settings
     fig.update_layout(
-        #increase title font size
+        autosize=True,
+        font=dict(
+            family="Arial, sans-serif",
+            size=16,         # Global base font size
+            color="#FFFFFF"  # High-contrast for dark template
+        ),
         title=dict(
             text="Time of Day vs. Top Set Weight",
-            font=dict(size=12)
+            font=dict(
+                size=28,     # Larger title font size
+                color="#FFFFFF"
+            )
         ),
         xaxis=dict(
-            title="Time (AM/PM)",
+            title=dict(
+                text="Time (AM/PM)",
+                font=dict(size=20, color="#FFFFFF")
+            ),
             tickmode="array",
             tickvals=xcenters,
-            title_font = dict(size=12),
-            ticktext=time_labels,  # Use AM/PM formatted labels
+            ticktext=time_labels,
             range=[time_min, time_max],
-            tickfont=dict(size=12) 
-
+            tickfont=dict(size=16, color="#FFFFFF")
         ),
         yaxis=dict(
-            #set yaxis limit from 400 to 600
             range=[400, 600],
-            title=f"{weight_col} (lbs)",
-            title_font=dict(size=12),
-            tickfont=dict(size=12) 
+            title=dict(
+                text=f"{weight_col} (lbs)",
+                font=dict(size=20, color="#FFFFFF")
+            ),
+            tickfont=dict(size=16, color="#FFFFFF")
         ),
-        #template="plotly_white",
-        #template="plotly_dark",
         template="plotly_dark",
         paper_bgcolor="rgba(0, 0, 0, 0)",
-        plot_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)"
     )
 
     return fig
