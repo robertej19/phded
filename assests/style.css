@@ -1,0 +1,20 @@
+/* General styling */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Mobile-specific styles */
+@media screen and (max-width: 768px) {
+    .my-class {
+        font-size: 12px;
+    }
+}
+
+/* Desktop-specific styles */
+@media screen and (min-width: 769px) {
+    .my-class {
+        font-size: 18px;
+    }
+}
