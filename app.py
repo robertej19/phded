@@ -49,6 +49,12 @@ CSV_URL = (
 )
 LOCAL_CSV = "data/local_data.csv"
 
+# check if local csv exists
+if not os.path.exists(LOCAL_CSV):
+    print("Local CSV does not exist, creating it now...")
+    df = load_data(CSV_URL)
+    df.to_csv(LOCAL_CSV, index=False)
+    
 # -------------------------------------------------------------------------
 # 2) Load/Cache Data
 # -------------------------------------------------------------------------

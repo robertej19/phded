@@ -2,6 +2,7 @@
 
 import pandas as pd
 import plotly.graph_objects as go
+
 def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     """
     Builds a figure with 4 scatter traces of:
@@ -12,6 +13,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
 
     - No legend in the plot (showlegend=False).
     - All traces start with low opacity, letting us toggle them on/off externally.
+    - Updated fonts to be larger for readability on any device.
     """
 
     # Ensure needed columns
@@ -62,8 +64,6 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         ),
     )
 
-
-
     # Trace 3: Top Set Weight
     trace_top = go.Scatter(
         x=xvals,
@@ -98,40 +98,67 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     # Build figure with all 4 traces
     fig = go.Figure(data=[trace_eff, trace_avg, trace_top, trace_reps])
 
-
-
+    # Updated layout for enhanced readability across devices:
     fig.update_layout(
         showlegend=False,  # No legend in the plot
-        xaxis_title="Day Number",
-        #template="plotly_white",
         template="plotly_dark",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
-        
-
-        
+        autosize=True,  # Allow automatic sizing for responsiveness
         font=dict(
-            size=12,  # Increase font size globally
+            family="Arial, sans-serif",
+            size=16,         # Global base font size (increased)
+            color="#FFFFFF"  # High-contrast white text for dark background
         ),
         title=dict(
             text="Deadlifts Over Time",
-            font=dict(size=12)  # Increase title font size
+            font=dict(
+                size=28,     # Larger title font size
+                color="#FFFFFF"
+            )
         ),
         xaxis=dict(
-            title_font=dict(size=12),  # Increase x-axis title font size
-            tickfont=dict(size=12)    # Increase x-axis tick font size
+            title=dict(
+                text="Day Number",
+                font=dict(
+                    size=20,  # Larger x-axis title
+                    color="#FFFFFF"
+                )
+            ),
+            tickfont=dict(
+                size=16,      # Larger tick labels
+                color="#FFFFFF"
+            )
         ),
         yaxis=dict(
-            title="Weight (lbs)",
-            title_font=dict(size=12),  # Increase y-axis title font size
-            tickfont=dict(size=12)    # Increase y-axis tick font size
+            title=dict(
+                text="Weight (lbs)",
+                font=dict(
+                    size=20,  # Larger y-axis title
+                    color="#FFFFFF"
+                )
+            ),
+            tickfont=dict(
+                size=16,      # Larger tick labels
+                color="#FFFFFF"
+            )
         ),
-
         yaxis2=dict(
-            title="Number of Reps",
+            title=dict(
+                text="Number of Reps",
+                font=dict(
+                    size=20,  # Larger secondary y-axis title
+                    color="#FFFFFF"
+                )
+            ),
+            tickfont=dict(
+                size=16,      # Larger tick labels for secondary y-axis
+                color="#FFFFFF"
+            ),
             overlaying="y",
             side="right",
             showgrid=False  # Remove horizontal grid lines for the secondary y-axis
         )
     )
+
     return fig
