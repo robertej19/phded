@@ -8,7 +8,7 @@ import numpy as np
 # 2) Import specific chart modules
 from charts.chart_1_multi import create_multi_weight_scatter
 from charts.chart_2_time_vs_weight_2d import create_time_vs_weight_2d
-from charts.chart_3_time_circles import create_am_pm_radial_time_plot
+from charts.chart_3_time_circles import create_am_pm_radial_time_plots
 from charts.chart_4_day_vs_time import create_day_vs_time_of_day
 from charts.chart_5_rest_time import create_rest_time_histogram
 from charts.chart_6_day_week_time import create_day_of_week_vs_weight_with_labels
@@ -93,7 +93,7 @@ fig_oneday = create_histogram_with_toggles(df)
 df2 = df.dropna(subset=["Time"])
 
 fig_2d_hist = create_time_vs_weight_2d(df2)
-fig_time_circular = create_am_pm_radial_time_plot(df2)
+fig_time_circular_am,fig_time_circular_pm = create_am_pm_radial_time_plots(df2)
 fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
 fig_rest_time = create_rest_time_histogram(df2)
 
@@ -262,16 +262,28 @@ app.layout = dbc.Container(
             )
         ),
 
+
         dbc.Row(
-            dbc.Col(
-                dcc.Graph(
-                    figure=fig_time_circular,
-                    style={
-                        "height": "125vw"  # Height equals 100% of the viewport width
-                    },
+            [
+                dbc.Col(
+                    dcc.Graph(
+                        id='graph-1',
+                        figure=fig_time_circular_am,
+                        className="responsive-graph"
+                    ),
+                    xs=12, sm=12, md=6, lg=6, xl=6  # Full width on xs/sm, half-width on md+
                 ),
-            )
+                dbc.Col(
+                    dcc.Graph(
+                        id='graph-2',
+                        figure=fig_time_circular_pm,
+                        className="responsive-graph"
+                    ),
+                    xs=12, sm=12, md=6, lg=6, xl=6
+                ),
+            ]
         ),
+
 
         dbc.Row(
             dbc.Col(

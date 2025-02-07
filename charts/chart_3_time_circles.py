@@ -1,28 +1,25 @@
 import numpy as np
 import pandas as pd
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from typing import Tuple
 
-import numpy as np
-import pandas as pd
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-
-def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
+def create_am_pm_radial_time_plots(df: pd.DataFrame) -> Tuple[go.Figure, go.Figure]:
     """
-    Creates two radial (polar) plots arranged vertically:
-      - Top: 12 AM -> 11:59 AM (0–12 hours), divided into 48 bins (each bin = 15 min).
-      - Bottom: 12 PM -> 11:59 PM (12–24 hours), also divided into 48 bins.
+    Creates two separate radial (polar) plots:
+      - One for 12 AM -> 11:59 AM (0–12 hours), divided into 48 bins (each bin = 15 min).
+      - One for 12 PM -> 11:59 PM (12–24 hours), also divided into 48 bins.
     
     Each 15-min bin extends radially based on the number of lifts in that quarter-hour.
-    Hour labels appear every 4 bins (i.e. every hour) and both plots share the same
-    maximum radial range for easy comparison.
+    Hour labels appear every 4 bins (i.e. every hour). Both plots use the same maximum
+    radial range for easy visual comparison.
     
     On hover, the time slice for that bin and the number of lifts are displayed.
     
-    Updates:
-      - Larger, high-contrast fonts for all text elements.
-      - Each polar plot is extended to use the full width of the figure.
+    The layout uses larger, high-contrast fonts, and each polar plot is extended to
+    use the full width of its figure.
+    
+    Returns:
+        A tuple (am_fig, pm_fig) where each is a plotly.graph_objects.Figure.
     """
     # -------------------------------------------------------------------------
     # 1) Convert 'Time' -> 'DecimalHour' if not already present.
@@ -104,7 +101,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         label = "12 AM" if hour == 0 else f"{hour} AM"
         am_ticktext.append(label)
 
-    # PM tick settings: Hours 12–23, but labels shown as "12 PM", "1 PM", etc.
+    # PM tick settings: Hours 12–23 (displayed as "12 PM", "1 PM", etc.)
     pm_tickvals = []
     pm_ticktext = []
     for hour in range(12, 24):
@@ -116,7 +113,6 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
     # -------------------------------------------------------------------------
     # 7) Create custom hover text for each quarter-hour bin.
     # -------------------------------------------------------------------------
-    # Helper to convert a decimal hour to an AM/PM string.
     def decimal_hour_to_ampm(decimal_hour):
         hour = int(decimal_hour)
         minute = int(round((decimal_hour - hour) * 60))
@@ -135,58 +131,32 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         end = (bin_index + 1) / 4.0 + 12
         return f"{decimal_hour_to_ampm(start)} - {decimal_hour_to_ampm(end)}"
 
-    # Build custom data arrays for hover text.
     am_customdata = [quarter_bin_to_time_range_am(i) for i in range(n_bins)]
     pm_customdata = [quarter_bin_to_time_range_pm(i) for i in range(n_bins)]
 
     # -------------------------------------------------------------------------
-    # 8) Create the subplot with two polar charts arranged vertically
-    # -------------------------------------------------------------------------
-    from plotly.subplots import make_subplots
-    fig = make_subplots(
-        rows=2,
-        cols=1,
-        specs=[[{"type": "polar"}],
-               [{"type": "polar"}]]
-    )
-
-    # Add AM trace with custom hover data.
-    fig.add_trace(
-        go.Barpolar(
-            r=am_counts_arr,
-            theta=angles,
-            width=angle_step,
-            marker_color="green",
-            name="AM 15-min bins",
-            customdata=am_customdata,
-            hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
-        ),
-        row=1, col=1
-    )
-
-    # Add PM trace with custom hover data.
-    fig.add_trace(
-        go.Barpolar(
-            r=pm_counts_arr,
-            theta=angles,
-            width=angle_step,
-            marker_color="firebrick",
-            name="PM 15-min bins",
-            customdata=pm_customdata,
-            hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
-        ),
-        row=2, col=1
-    )
-
-    # -------------------------------------------------------------------------
-    # 9) Set the same maximum radial range for both polar plots for easy comparison
+    # 8) Determine the common maximum value for the radial axis.
     # -------------------------------------------------------------------------
     max_val = float(max(am_counts_arr.max(), pm_counts_arr.max()))
 
     # -------------------------------------------------------------------------
-    # 10) Update layout with larger fonts and extended polar domains
+    # 9) Create the AM polar figure.
     # -------------------------------------------------------------------------
-    fig.update_layout(
+    am_fig = go.Figure(
+        data=[
+            go.Barpolar(
+                r=am_counts_arr,
+                theta=angles,
+                width=angle_step,
+                marker_color="green",
+                name="AM 15-min bins",
+                customdata=am_customdata,
+                hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
+            )
+        ]
+    )
+
+    am_fig.update_layout(
         autosize=True,
         font=dict(
             family="Arial, sans-serif",
@@ -194,7 +164,7 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
             color="#FFFFFF"
         ),
         title=dict(
-            text="Number of Lifts Across Time of Day",
+            text="Number of Lifts Across Time of Day (AM)",
             font=dict(size=28, color="#FFFFFF")
         ),
         showlegend=False,
@@ -204,7 +174,6 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         polar=dict(
             radialaxis=dict(
                 showticklabels=False,
-                title=None,
                 range=[0, max_val]
             ),
             angularaxis=dict(
@@ -215,11 +184,44 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
                 direction="clockwise",
                 rotation=90
             )
+        )
+    )
+
+    # -------------------------------------------------------------------------
+    # 10) Create the PM polar figure.
+    # -------------------------------------------------------------------------
+    pm_fig = go.Figure(
+        data=[
+            go.Barpolar(
+                r=pm_counts_arr,
+                theta=angles,
+                width=angle_step,
+                marker_color="firebrick",
+                name="PM 15-min bins",
+                customdata=pm_customdata,
+                hovertemplate="Time: %{customdata}<br>Lifts: %{r}<extra></extra>"
+            )
+        ]
+    )
+
+    pm_fig.update_layout(
+        autosize=True,
+        font=dict(
+            family="Arial, sans-serif",
+            size=16,
+            color="#FFFFFF"
         ),
-        polar2=dict(
+        title=dict(
+            text="Number of Lifts Across Time of Day (PM)",
+            font=dict(size=28, color="#FFFFFF")
+        ),
+        showlegend=False,
+        template="plotly_dark",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        polar=dict(
             radialaxis=dict(
                 showticklabels=False,
-                title=None,
                 range=[0, max_val]
             ),
             angularaxis=dict(
@@ -233,4 +235,9 @@ def create_am_pm_radial_time_plot(df: pd.DataFrame) -> go.Figure:
         )
     )
 
-    return fig
+    return am_fig, pm_fig
+
+# Example usage:
+# am_figure, pm_figure = create_am_pm_radial_time_plots(your_dataframe)
+# am_figure.show()
+# pm_figure.show()
