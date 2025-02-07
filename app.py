@@ -42,15 +42,20 @@ if not os.path.exists(LOCAL_CSV):
     print("Local CSV does not exist, creating it now...")
     df = load_data(CSV_URL)
     df.to_csv(LOCAL_CSV, index=False)
-
 # -------------------------------------------------------------------------
 # 2) Load/Cache Data
 # -------------------------------------------------------------------------
-if not is_data_stale(LOCAL_CSV):
+if is_data_stale(LOCAL_CSV):
     df = pd.read_csv(CSV_URL)
     df.to_csv(LOCAL_CSV, index=False)
 else:
     df = pd.read_csv(LOCAL_CSV)
+
+df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+#print row 1116:
+# Now filter out rows that contain either an empty string or "#VALUE!" in any column.
+mask = df.apply(lambda row: not row.astype(str).isin(["", " ", "#VALUE!"]).any(), axis=1)
+df = df[mask]
 
 # Convert some columns to numeric if they exist
 for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
@@ -59,14 +64,15 @@ for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
 
 
 
+
 df = df.dropna(subset=["Top Set Weight"])
-print(df)
+
+#save this df as an output csv
+df.to_csv("processed.csv")
 # Compute "Most Recent Lift: YxZ"
 if 'Top Set Weight' in df.columns and 'Number of Reps' in df.columns:
     most_recent_weight = df['Top Set Weight'].iloc[-1]
     most_recent_reps = df['Number of Reps'].iloc[-1]
-    print(most_recent_weight)
-    print(most_recent_reps)
     most_recent_lift = f"{int(most_recent_weight)}lbs x{int(most_recent_reps)}"
     most_recent_date_raw = str(df['Date'].iloc[-1])  # Ensure it's a string
     most_recent_date = datetime.datetime.strptime(most_recent_date_raw, "%Y%m%d").strftime("%m.%d.%y")
