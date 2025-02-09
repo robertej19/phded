@@ -127,7 +127,7 @@ def create_time_bingo(df: pd.DataFrame) -> go.Figure:
     # Update Axes Labels for the Main Heatmap
     # --------------------------------
     fig.update_xaxes(title_text="Minute of Hour", row=2, col=2)
-    fig.update_yaxes(title_text="Hour of Day", row=1, col=2)
+    fig.update_yaxes(title_text="Hour of Day", row=1, col=1)
     fig.update_xaxes(autorange='reversed', row=1, col=1)
     fig.update_yaxes(autorange='reversed', row=2, col=2)
 
