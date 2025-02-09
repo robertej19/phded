@@ -16,6 +16,7 @@ from charts.chart_6_day_week_time import create_day_of_week_vs_time_am_pm
 
 from charts.six_multibool import create_boolean_grip_heatmap
 from charts.chart_7_1D_histograms import create_histogram_with_toggles
+from charts.chart_8_time_bingo import create_time_bingo
 
 from utils.data import load_data, is_data_stale
 
@@ -52,7 +53,6 @@ else:
     df = pd.read_csv(LOCAL_CSV)
 
 df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-#print row 1116:
 # Now filter out rows that contain either an empty string or "#VALUE!" in any column.
 mask = df.apply(lambda row: not row.astype(str).isin(["", " ", "#VALUE!"]).any(), axis=1)
 df = df[mask]
@@ -67,8 +67,6 @@ for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
 
 df = df.dropna(subset=["Top Set Weight"])
 
-#save this df as an output csv
-df.to_csv("processed.csv")
 # Compute "Most Recent Lift: YxZ"
 if 'Top Set Weight' in df.columns and 'Number of Reps' in df.columns:
     most_recent_weight = df['Top Set Weight'].iloc[-1]
@@ -99,6 +97,8 @@ fig_rest_time = create_rest_time_histogram(df2)
 
 fig_dwt2 = create_day_of_week_vs_weight_with_labels(df)
 fig_dwt = create_day_of_week_vs_time_am_pm(df)
+fig_time_bingo = create_time_bingo(df2)
+
 
 number_of_empty_rows_before_today = day_number - len(df)
 
@@ -122,7 +122,7 @@ empty_rows_message = (
 ############################
 To Do
 Plot weight & frequency & lifting time distribution vs day of the week!
-PLOT DISTRIBUTION OF MINUTES - 0 to 59				
+	
 
 Fix bimodal guassian distribution
 Fix Bingo plot, on hover = show selected points on # vs day plot (#1)
@@ -154,6 +154,8 @@ app.layout = dbc.Container(
             )
         ),
         
+
+
         dbc.Row(
             dbc.Col(
                 html.Div(
@@ -342,6 +344,19 @@ app.layout = dbc.Container(
                 width=12
             )
         ),
+
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    id="time-bingo-graph",
+                    figure=fig_time_bingo,
+                     style={"width": "100%", "height": "auto"}
+                    #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}  # 10% L/R padding, taller plot
+                ),
+                width=12
+            )
+        ),
+
         # dbc.Row(
         #     dbc.Col(
         #         dcc.Graph(
