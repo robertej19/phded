@@ -127,7 +127,7 @@ Plot weight & frequency & lifting time distribution vs day of the week!
 Fix bimodal guassian distribution
 Fix Bingo plot, on hover = show selected points on # vs day plot (#1)
 Fix Time of Day, if desired toggle switch for pure histogram vs circular heatmap // or linear heatmap
-
+Need to fix time parser off by one error - possibly issue due to daylight savings time
 'answer the question - what new information do i convey by plotting this?'
 """
 # 3) Define the Dash app
