@@ -55,7 +55,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Average Weight"],
         mode="lines",  # Connect points with a line
         name="Average Weight",
-        line_shape="spline",  # Add smoothing to the curve
+        #line_shape="spline",  # Add smoothing to the curve
         text=custom_hover,
         hovertemplate=(
             "Day: %{x}<br>"
@@ -68,7 +68,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     trace_top = go.Scatter(
         x=xvals,
         y=df["Top Set Weight"],
-        mode="markers",
+        mode="lines",
         name="Top Set Weight",
         marker=dict(opacity=1),
         text=custom_hover,
