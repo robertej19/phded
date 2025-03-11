@@ -97,7 +97,7 @@ fig_rest_time = create_rest_time_histogram(df2)
 
 fig_dwt2 = create_day_of_week_vs_weight_with_labels(df)
 fig_dwt = create_day_of_week_vs_time_am_pm(df)
-fig_time_bingo = create_time_bingo(df2)
+fig_time_bingo, stat_results = create_time_bingo(df2)
 
 
 number_of_empty_rows_before_today = day_number - len(df)
@@ -356,7 +356,53 @@ app.layout = dbc.Container(
                 width=12
             )
         ),
+dbc.Row(
+    dbc.Col(
+        html.Div([
+            html.H4("Statistical Analysis of Lift Times", style={"fontWeight": "bold"}),
+            html.P(
+                "The chi-square test is a statistical method used to determine whether the observed distribution of data significantly differs "
+                "from an expected theoretical distribution. The chi-square statistic quantifies the difference between observed and expected frequencies. "
+                "The associated p-value represents the probability of observing data as extreme as the actual data, assuming that the null hypothesis "
+                "(typically a uniform or specified distribution) is correct. A small p-value (commonly less than 0.05) provides evidence that the observed "
+                "data deviate significantly from the expected distribution."
+            ),
+            html.P(
+                "For example, the minute-level data were tested for uniformity across the 60 minutes within an hour. "
+                f"The resulting chi-square statistic was {stat_results['minutes_uniform']['chi2']:.2f} with a p-value of "
+                f"{stat_results['minutes_uniform']['p_value']:.3e}. Given this relatively large p-value, the data do not show "
+                "significant deviation from a uniform distribution at the minute level."
+            ),
+            html.P(
+                "In contrast, the hourly data were analyzed for uniformity across the 24 hours of the day. "
+                f"This resulted in a chi-square statistic of {stat_results['hours_uniform']['chi2']:.2f} and a very small p-value "
+                f"({stat_results['hours_uniform']['p_value']:.3e}), indicating strong evidence against uniform distribution. "
+                "Thus, certain hours exhibit significantly higher lift activity than others."
+            ),
+            html.P(
+                "Additionally, the hourly data were tested against a single Gaussian (normal) distribution characterized by the dataset's mean and "
+                "standard deviation. This produced a chi-square statistic of "
+                f"{stat_results['hours_gaussian']['chi2']:.2f} with a small p-value ({stat_results['hours_gaussian']['p_value']:.3e}), "
+                "strongly suggesting that lift times do not conform to a simple Gaussian distribution."
+            ),
+            html.P(
+                "Finally, Gaussian Mixture Models (GMM) were used to evaluate whether lift times exhibited multimodal patterns, "
+                "meaning multiple distinct periods of increased lift activity throughout the day. Models with 1 to 5 Gaussian components "
+                "were compared using the Bayesian Information Criterion (BIC), a metric balancing goodness-of-fit against model complexity. "
+                f"The optimal model contained {stat_results['hours_multimodal']['best_n_components']} components, indicating multiple peaks of lift activity. "
+                "The relative support for models with differing numbers of peaks was measured using differences in BIC values (ΔBIC), where larger positive ΔBIC values indicate less support. "
+                "The ΔBIC values for each alternative model tested were: "
+                f"{'; '.join([f'{n}-component: ΔBIC={delta_bic:.1f}' for n, delta_bic in stat_results['hours_multimodal']['delta_bic'].items() if n != stat_results['hours_multimodal']['best_n_components']])}. "
+                "The identified peaks occur at approximately "
+                f"{', '.join(f'{peak:.1f}' for peak in stat_results['hours_multimodal']['peaks'])} hours."
+            ),
+        ], style={"padding": "20px", "color": "#FFFFFF"}),
+        width=12
+    )
+)
 
+
+,
         # dbc.Row(
         #     dbc.Col(
         #         dcc.Graph(
@@ -410,6 +456,7 @@ def toggle_traces(selected_metrics):
         fig.update_layout(yaxis2=dict(visible=False))
 
     return fig
+
 
 
 # 6) Run

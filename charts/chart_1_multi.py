@@ -26,10 +26,11 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         if col not in df.columns:
             raise ValueError(f"Missing required column: {col}")
 
-    # Common x-axis
-    xvals = df["Day Number"]
+    # Convert "Day Number" into actual dates
+    # Day Number 1 corresponds to 2021-12-29
+    xvals = pd.to_datetime("2021-12-29") + pd.to_timedelta(df["Day Number"] - 1, unit="D")
 
-    # Custom hover text
+    # Custom hover text for additional info
     def hover_text(i):
         return f"Time: {df['Time'].iloc[i]}<br>Grip: {df['Grip'].iloc[i]}"
     custom_hover = [hover_text(i) for i in range(len(df))]
@@ -43,7 +44,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Day: %{x}<br>"
+            "Date: %{x|%B %Y}<br>"
             "Effective Weight: %{y}<br>"
             "%{text}<extra></extra>"
         ),
@@ -55,10 +56,10 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Average Weight"],
         mode="lines",  # Connect points with a line
         name="Average Weight",
-        #line_shape="spline",  # Add smoothing to the curve
+        #line_shape="spline",  # Add smoothing to the curve if desired
         text=custom_hover,
         hovertemplate=(
-            "Day: %{x}<br>"
+            "Date: %{x|%B %Y}<br>"
             "Average Weight: %{y}<br>"
             "%{text}<extra></extra>"
         ),
@@ -73,7 +74,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Day: %{x}<br>"
+            "Date: %{x|%B %Y}<br>"
             "Top Set Weight: %{y}<br>"
             "%{text}<extra></extra>"
         ),
@@ -88,7 +89,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Day: %{x}<br>"
+            "Date: %{x|%B %Y}<br>"
             "Reps: %{y}<br>"
             "%{text}<extra></extra>"
         ),
@@ -119,7 +120,7 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         ),
         xaxis=dict(
             title=dict(
-                text="Day Number",
+                text="Date",
                 font=dict(
                     size=20,  # Larger x-axis title
                     color="#FFFFFF"
@@ -128,7 +129,8 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
             tickfont=dict(
                 size=16,      # Larger tick labels
                 color="#FFFFFF"
-            )
+            ),
+            tickformat="%B %Y",  # Display date in "Month Year" format
         ),
         yaxis=dict(
             title=dict(
