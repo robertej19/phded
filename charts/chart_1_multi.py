@@ -2,6 +2,9 @@
 
 import pandas as pd
 import plotly.graph_objects as go
+import math
+import datetime
+import pandas as pd
 
 def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     """
@@ -30,9 +33,33 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     # Day Number 1 corresponds to 2021-12-29
     xvals = pd.to_datetime("2021-12-29") + pd.to_timedelta(df["Day Number"] - 1, unit="D")
 
-    # Custom hover text for additional info
+
+    def format_time(time_val):
+        # Try converting time_val to a float
+        try:
+            numeric_time = float(time_val)
+        except (ValueError, TypeError):
+            return "N/A"
+        # Check if the numeric value is NaN
+        if math.isnan(numeric_time):
+            return "N/A"
+        # Convert to integer for formatting
+        time_int = int(numeric_time)
+        hour = time_int // 100
+        minute = time_int % 100
+        dt = datetime.time(hour, minute)
+        formatted = dt.strftime("%I:%M %p")
+        # Remove any leading zero, e.g., "04:24 PM" -> "4:24 PM"
+        if formatted.startswith("0"):
+            formatted = formatted[1:]
+        return formatted
+
+
+
+    # Custom hover text for additional info (only the time is now shown)
     def hover_text(i):
-        return f"Time: {df['Time'].iloc[i]}<br>Grip: {df['Grip'].iloc[i]}"
+        formatted_time = format_time(df['Time'].iloc[i])
+        return f"Time: {formatted_time}<br>"
     custom_hover = [hover_text(i) for i in range(len(df))]
 
     # Trace 1: Effective Weight
@@ -44,8 +71,8 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Date: %{x|%B %Y}<br>"
-            "Effective Weight: %{y}<br>"
+            "%{x|%B %d %Y}<br>"
+            "Effective Weight: %{y:.0f}<br>"
             "%{text}<extra></extra>"
         ),
     )
@@ -56,11 +83,10 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Average Weight"],
         mode="lines",  # Connect points with a line
         name="Average Weight",
-        #line_shape="spline",  # Add smoothing to the curve if desired
         text=custom_hover,
         hovertemplate=(
-            "Date: %{x|%B %Y}<br>"
-            "Average Weight: %{y}<br>"
+            "%{x|%B %d %Y}<br>"
+            "Average Weight: %{y:.0f}<br>"
             "%{text}<extra></extra>"
         ),
     )
@@ -74,8 +100,8 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Date: %{x|%B %Y}<br>"
-            "Top Set Weight: %{y}<br>"
+            "%{x|%B %d %Y}<br>"
+            "Top Set Weight: %{y:.0f}<br>"
             "%{text}<extra></extra>"
         ),
     )
@@ -89,8 +115,8 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         marker=dict(opacity=1),
         text=custom_hover,
         hovertemplate=(
-            "Date: %{x|%B %Y}<br>"
-            "Reps: %{y}<br>"
+            "%{x|%B %d %Y}<br>"
+            "Reps: %{y:.0f}<br>"
             "%{text}<extra></extra>"
         ),
         yaxis="y2"

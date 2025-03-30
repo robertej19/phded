@@ -446,8 +446,13 @@ def toggle_traces(selected_metrics):
     for i, trace_name in enumerate(trace_names):
         if trace_name in selected_metrics:
             fig.data[i].opacity = 1.0
+            # Restore the original hovertemplate if needed
+            # (assuming you stored it or know what it should be)
         else:
             fig.data[i].opacity = 0.0
+            # Disable hover events on this trace
+            fig.data[i].hoverinfo = 'skip'
+
 
     # Toggle visibility of the second y-axis based on "Number of Reps" selection
     if "Number of Reps" in selected_metrics:
