@@ -103,8 +103,10 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
             z=H.T,  # Transpose to match Plotly's row-column convention
             colorscale=plotly_colorscale,
             colorbar=dict(
-                title="Count",
-                titlefont=dict(size=16, color="#FFFFFF"),
+                title=dict(
+                    text="Count",
+                    font=dict(size=16, color="#FFFFFF")
+                ),
                 tickfont=dict(size=16, color="#FFFFFF")
             ),
             zmin=0,
