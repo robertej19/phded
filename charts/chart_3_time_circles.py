@@ -165,7 +165,9 @@ def create_am_pm_radial_time_plots(df: pd.DataFrame) -> Tuple[go.Figure, go.Figu
         ),
         title=dict(
             text="Number of Lifts Across Time of Day (AM)",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         showlegend=False,
         template="plotly_dark",
@@ -213,7 +215,9 @@ def create_am_pm_radial_time_plots(df: pd.DataFrame) -> Tuple[go.Figure, go.Figu
         ),
         title=dict(
             text="Number of Lifts Across Time of Day (PM)",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         showlegend=False,
         template="plotly_dark",

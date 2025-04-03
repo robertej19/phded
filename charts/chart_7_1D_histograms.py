@@ -117,7 +117,11 @@ def create_histogram_with_toggles(df):
                 ),
             )
         ],
-        title="Distribution of Number of Reps",
+        title=dict(
+            text="Distribution of Number of Reps",
+            x=0.5,  # Center the title
+            xanchor='center'
+        ),
         font=dict(
             family="Arial, sans-serif",
             size=18,         # Increased global base font size

@@ -119,7 +119,9 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
         ),
         title=dict(
             text="Day Number vs. Time of Day",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         xaxis=dict(
             title=dict(
@@ -146,4 +148,3 @@ def create_day_vs_time_of_day(df: pd.DataFrame) -> go.Figure:
 
 
     return fig
-

@@ -136,7 +136,9 @@ def create_day_of_week_vs_time_am_pm(df: pd.DataFrame) -> go.Figure:
         autosize=True,
         title=dict(
             text="Day of Week vs. Time of Day",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         xaxis=dict(
             tickmode="array",
@@ -253,7 +255,9 @@ def create_day_of_week_vs_weight_with_labels(df: pd.DataFrame) -> go.Figure:
         autosize=True,
         title=dict(
             text="Day of Week vs. Top Set Weight",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         xaxis=dict(
             tickmode="array",

@@ -122,10 +122,21 @@ def create_time_bingo(df: pd.DataFrame):
         row_heights=[0.8, 0.2],
         column_widths=[0.1, 0.9],
         horizontal_spacing=0.02,
-        vertical_spacing=0.02
+        vertical_spacing=0.02,
+        subplot_titles=["", "", ""]  # Empty titles for subplots
     )
 
     dark_colormap = 'viridis'
+
+    # Update layout for centered main title
+    fig.update_layout(
+        title=dict(
+            text=f"Bingo Chart of Lift Clock Times:<br>{non_zero_count}/{total_possible} Times Recorded",
+            x=0.5,
+            xanchor='center'
+        )
+    )
+
     # --------------------------------
     # Add the Main Heatmap (Row 1, Col 2)
     # --------------------------------
@@ -219,14 +230,6 @@ def create_time_bingo(df: pd.DataFrame):
             family="Arial, sans-serif",
             size=16,
             color="#FFFFFF"
-        ),
-        title=dict(
-            text=f"Bingo Chart of Lift Clock Times:<br>{non_zero_count}/{total_possible} Times Recorded",
-            font=dict(
-                size=28,
-                color="#FFFFFF"
-            ),
-            x=0.5
         ),
         margin=dict(l=60, r=60, t=100, b=60)
     )

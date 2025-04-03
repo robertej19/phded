@@ -130,7 +130,9 @@ def create_rest_time_histogram(df: pd.DataFrame):
         ),
         title=dict(
             text="Histogram of Rest Time (hours)",
-            font=dict(size=28, color="#FFFFFF")
+            font=dict(size=28, color="#FFFFFF"),
+            x=0.5,
+            xanchor='center'
         ),
         xaxis=dict(
             title=dict(

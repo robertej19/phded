@@ -128,7 +128,9 @@ def create_time_vs_weight_2d(df: pd.DataFrame) -> go.Figure:
             font=dict(
                 size=28,     # Larger title font size
                 color="#FFFFFF"
-            )
+            ),
+            x=0.5,          # Center the title
+            xanchor='center'
         ),
         xaxis=dict(
             title=dict(
