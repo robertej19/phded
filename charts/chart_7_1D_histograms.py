@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-
+import numpy as np
 
 def create_histogram_with_toggles(df):
     """
@@ -20,7 +20,7 @@ def create_histogram_with_toggles(df):
     # Metrics that require x-axis limits to be set to 400-600
     metrics_with_custom_xlim = {"Top Set Weight", "Average Weight", "Effective Weight"}
 
-    # 2) Create a histogram trace for each metric
+    # 2) Create a trace for each metric
     fig = go.Figure()
 
     for i, m in enumerate(metrics):
@@ -29,16 +29,43 @@ def create_histogram_with_toggles(df):
         if col_name not in df.columns:
             continue
 
-        fig.add_trace(
-            go.Histogram(
-                x=df[col_name],
-                name=m["label"],
-                visible=True if i == 0 else False,  # Show only the first trace by default
-                opacity=0.6,  # Slight transparency so overlapping histograms can be seen
-                nbinsx=20,    # Set number of bins
-                hovertemplate="%{x0} - %{x1} %{name}<br>%{y} lifts",  # Customized hover label
+        if col_name == "Number of Reps":
+            # Manually compute histogram bins so we can set custom hover text
+            data = df[col_name]
+            # Create integer bins covering the range of rep counts
+            bin_min = int(data.min())
+            bin_max = int(data.max())
+            bin_edges = list(range(bin_min, bin_max + 2))
+            counts, bins = np.histogram(data, bins=bin_edges)
+            # Use the left edge of each bin as the x value
+            bin_values = bins[:-1]
+            # Create custom hover text: "1 rep" if 1, otherwise "X reps"
+            custom_text = [f"{x} rep" if x == 1 else f"{x} reps" for x in bin_values]
+
+            fig.add_trace(
+                go.Bar(
+                    x=bin_values,
+                    y=counts,
+                    name=m["label"],
+                    visible=True if i == 0 else False,
+                    opacity=0.6,
+                    hovertemplate="%{customdata}<br>%{y:.0f} lifts<extra></extra>",
+                    customdata=custom_text
+                )
             )
-        )
+        else:
+            # For the other metrics, use a Histogram trace with a standard hover template
+            hover_template = "%{x:.0f} lbs<br>%{y:.0f} lifts<extra></extra>"
+            fig.add_trace(
+                go.Histogram(
+                    x=df[col_name],
+                    name=m["label"],
+                    visible=True if i == 0 else False,  # Show only the first trace by default
+                    opacity=0.6,  # Slight transparency so overlapping histograms can be seen
+                    nbinsx=20,    # Set number of bins
+                    hovertemplate=hover_template,
+                )
+            )
 
     # 3) Create updatemenus (buttons) for toggling traces
     buttons = []
