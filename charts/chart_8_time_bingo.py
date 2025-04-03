@@ -173,7 +173,8 @@ def create_time_bingo(df: pd.DataFrame):
             mode='lines',
             line=dict(dash='dash', width=2),
             name=f'Component {k+1}',
-            showlegend=False
+            showlegend=False,
+            hoverinfo='skip'
         )
         fig.add_trace(comp_trace, row=1, col=1)
     # Add composite GMM curve (solid line)
@@ -183,7 +184,8 @@ def create_time_bingo(df: pd.DataFrame):
         mode='lines',
         line=dict(color='cyan', width=2),
         name='GMM Total',
-        showlegend=False
+        showlegend=False,
+        hoverinfo='skip'
     )
     fig.add_trace(composite_trace, row=1, col=1)
 
