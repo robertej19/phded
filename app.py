@@ -362,8 +362,13 @@ app.layout = dbc.Container(
         dbc.Row(
             dbc.Col(
                 html.Div([
+                    dcc.Graph(
+                        id='fft-graph',
+                        figure=fig_fft,
+                        style={"width": "100%", "height": "auto"}
+                    ),
                     html.H4("Select Date Range for Frequency Analysis", 
-                           className="text-center mt-3 mb-2"),
+                           className="text-center mt-4 mb-2"),
                     dcc.RangeSlider(
                         id='fft-day-range',
                         min=df['Day Number'].min(),
@@ -376,11 +381,7 @@ app.layout = dbc.Container(
                         },
                         allowCross=False
                     ),
-                    dcc.Graph(
-                        id='fft-graph',
-                        figure=fig_fft,
-                        style={"width": "100%", "height": "auto"}
-                    )
+                    html.Div(style={"height": "20px"})  # Add some bottom spacing
                 ]),
                 width=12
             )

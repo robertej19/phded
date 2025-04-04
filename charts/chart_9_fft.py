@@ -132,9 +132,9 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
         row=2, col=1
     )
     
-    # Add markers for notable periods (weekly, biweekly, monthly)
-    notable_periods = [7, 14, 30.44]  # days
-    notable_labels = ['Weekly', 'Biweekly', 'Monthly']
+    # Add markers for notable periods (weekly, biweekly, monthly, quarterly, semi-annual)
+    notable_periods = [7, 14, 30.44, 91.31, 182.62]  # days
+    notable_labels = ['Weekly', 'Biweekly', 'Monthly', 'Quarterly', 'Semi-annual']
     
     for period, label in zip(notable_periods, notable_labels):
         fig.add_vline(
@@ -158,11 +158,12 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
             text=f"Lifting Pattern Analysis<br><sub>{date_range_text}</sub>",
             font=dict(size=24, color="#FFFFFF"),
             x=0.5,
-            xanchor='center'
+            xanchor='center',
+            y=0.95  # Move title up to create more space
         ),
         showlegend=False,
-        height=800,  # Increase overall height for better subplot visibility
-        margin=dict(l=60, r=20, t=100, b=60),
+        height=400,  # Decrease overall height
+        margin=dict(l=60, r=20, t=120, b=60),  # Increase top margin for title spacing
         hoverlabel=dict(
             bgcolor="rgba(0,0,0,0.8)",
             font=dict(color="#FFFFFF")
@@ -193,7 +194,7 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
         gridcolor="rgba(255, 255, 255, 0.1)",
         tickfont=dict(color="#FFFFFF"),
         title_font=dict(size=14, color="#FFFFFF"),
-        range=[0.7, 2.5],  # log10 range covering ~5 days to ~316 days
+        range=[0.7, np.log10(400)],  # log10 range covering ~5 days to 400 days
         row=2, col=1
     )
     
