@@ -5,11 +5,12 @@ import plotly.graph_objects as go
 import math
 import datetime
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     """
     Builds a figure with 4 scatter traces of:
-      1) Effective Weight
+      1) Effective Weight (colored by time of day using viridis colormap)
       2) Average Weight
       3) Top Set Weight
       4) Number of Reps (on a secondary y-axis)
@@ -39,27 +40,42 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         try:
             numeric_time = float(time_val)
         except (ValueError, TypeError):
-            return "N/A"
+            return None
         # Check if the numeric value is NaN
         if math.isnan(numeric_time):
-            return "N/A"
+            return None
         # Convert to integer for formatting
         time_int = int(numeric_time)
         hour = time_int // 100
         minute = time_int % 100
-        dt = datetime.time(hour, minute)
-        formatted = dt.strftime("%I:%M %p")
-        # Remove any leading zero, e.g., "04:24 PM" -> "4:24 PM"
-        if formatted.startswith("0"):
-            formatted = formatted[1:]
-        return formatted
-
-
+        try:
+            dt = datetime.time(hour, minute)
+            # Also return the normalized time value (0 to 1) for colormap
+            minutes_since_midnight = hour * 60 + minute
+            normalized_time = minutes_since_midnight / (24 * 60)
+            return dt, normalized_time
+        except ValueError:
+            return None
 
     # Custom hover text for additional info (only the time is now shown)
     def hover_text(i):
-        formatted_time = format_time(df['Time'].iloc[i])
+        time_result = format_time(df['Time'].iloc[i])
+        if time_result is None:
+            formatted_time = "N/A"
+        else:
+            formatted_time = time_result[0].strftime("%I:%M %p")
+            # Remove any leading zero
+            if formatted_time.startswith("0"):
+                formatted_time = formatted_time[1:]
         return f"Time: {formatted_time}<br>"
+    
+    # Get normalized time values for colormap
+    time_values = [format_time(t) for t in df['Time']]
+    normalized_times = [t[1] if t is not None else -1 for t in time_values]
+    
+    # Create color array using viridis colormap for valid times, grey for invalid
+    colors = ['#808080' if t == -1 else f'rgb{tuple(int(x*255) for x in plt.cm.viridis(t)[:3])}' for t in normalized_times]
+
     custom_hover = [hover_text(i) for i in range(len(df))]
 
     # Trace 1: Effective Weight
@@ -68,7 +84,11 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         y=df["Effective Weight"],
         mode="markers",
         name="Effective Weight",
-        marker=dict(opacity=1),
+        marker=dict(
+            opacity=1,
+            color=colors,
+            showscale=False
+        ),
         text=custom_hover,
         hovertemplate=(
             "%{x|%B %d %Y}<br>"
