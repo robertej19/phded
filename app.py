@@ -450,8 +450,10 @@ def toggle_traces(selected_metrics):
             # (assuming you stored it or know what it should be)
         else:
             fig.data[i].opacity = 0.0
-            # Disable hover events on this trace
-            fig.data[i].hoverinfo = 'skip'
+            # Completely disable hover for invisible traces
+            fig.data[i].hoverinfo = 'none'
+            fig.data[i].hoverlabel = None
+            fig.data[i].hovertemplate = None
 
 
     # Toggle visibility of the second y-axis based on "Number of Reps" selection
