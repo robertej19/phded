@@ -13,6 +13,7 @@ from charts.chart_4_day_vs_time import create_day_vs_time_of_day
 from charts.chart_5_rest_time import create_rest_time_histogram
 from charts.chart_6_day_week_time import create_day_of_week_vs_weight_with_labels
 from charts.chart_6_day_week_time import create_day_of_week_vs_time_am_pm
+from charts.chart_9_fft import create_fft_analysis
 
 from charts.six_multibool import create_boolean_grip_heatmap
 from charts.chart_7_1D_histograms import create_histogram_with_toggles
@@ -94,6 +95,8 @@ fig_2d_hist = create_time_vs_weight_2d(df2)
 fig_time_circular_am,fig_time_circular_pm = create_am_pm_radial_time_plots(df2)
 fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
 fig_rest_time = create_rest_time_histogram(df2)
+
+fig_fft = create_fft_analysis(df)
 
 fig_dwt2 = create_day_of_week_vs_weight_with_labels(df)
 fig_dwt = create_day_of_week_vs_time_am_pm(df)
@@ -356,6 +359,32 @@ app.layout = dbc.Container(
                 width=12
             )
         ),
+        dbc.Row(
+            dbc.Col(
+                html.Div([
+                    html.H4("Select Date Range for Frequency Analysis", 
+                           className="text-center mt-3 mb-2"),
+                    dcc.RangeSlider(
+                        id='fft-day-range',
+                        min=df['Day Number'].min(),
+                        max=df['Day Number'].max(),
+                        step=1,
+                        value=[df['Day Number'].min(), df['Day Number'].max()],
+                        marks={
+                            int(df['Day Number'].min()): {'label': 'Start', 'style': {'color': '#FFFFFF'}},
+                            int(df['Day Number'].max()): {'label': 'End', 'style': {'color': '#FFFFFF'}}
+                        },
+                        allowCross=False
+                    ),
+                    dcc.Graph(
+                        id='fft-graph',
+                        figure=fig_fft,
+                        style={"width": "100%", "height": "auto"}
+                    )
+                ]),
+                width=12
+            )
+        ),
 dbc.Row(
     dbc.Col(
         html.Div([
@@ -463,6 +492,17 @@ def toggle_traces(selected_metrics):
         fig.update_layout(yaxis2=dict(visible=False))
 
     return fig
+
+
+
+@app.callback(
+    Output("fft-graph", "figure"),
+    [Input("fft-day-range", "value")]
+)
+def update_fft_plot(day_range):
+    if day_range is None:
+        day_range = [df['Day Number'].min(), df['Day Number'].max()]
+    return create_fft_analysis(df, start_day=day_range[0], end_day=day_range[1])
 
 
 

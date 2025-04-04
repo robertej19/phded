@@ -152,6 +152,13 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         autosize=True,  # Allow automatic sizing for responsiveness
+        margin=dict(b=80, t=100, l=80, r=80),  # Increased margins to prevent label cutoff
+        hoverlabel=dict(
+            bgcolor="rgba(0,0,0,0.8)",
+            font=dict(color="#FFFFFF"),
+            bordercolor="rgba(255,255,255,0.3)"
+        ),
+        hovermode='closest',
         font=dict(
             family="Arial, sans-serif",
             size=16,         # Global base font size (increased)
