@@ -2,11 +2,13 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from scipy import signal
+from plotly.subplots import make_subplots
 
 def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = None) -> go.Figure:
     """
-    Creates a figure showing the Fourier transform of effective weight lifted per day.
-    This helps identify periodic patterns in lifting weights (e.g., weekly, monthly cycles).
+    Creates a figure showing:
+    1. Top subplot: Full time series of top set weight with shaded selected region
+    2. Bottom subplot: Fourier transform of effective weight lifted per day for selected region
     
     Args:
         df: DataFrame containing the lifting data
@@ -15,11 +17,14 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
     """
     
     # Ensure needed columns
-    needed_cols = ["Day Number", "Effective Weight"]
+    needed_cols = ["Day Number", "Effective Weight", "Top Set Weight"]
     for col in needed_cols:
         if col not in df.columns:
             raise ValueError(f"Missing required column: {col}")
 
+    # Store the full dataset
+    df_full = df.copy()
+    
     # Filter data by day range if specified
     if start_day is not None and end_day is not None:
         df = df[(df["Day Number"] >= start_day) & (df["Day Number"] <= end_day)].copy()
@@ -41,7 +46,49 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
         )
         return fig
 
-    # Get the day numbers and weights
+    # Create figure with secondary y-axis
+    fig = make_subplots(
+        rows=2, cols=1,
+        subplot_titles=["Top Set Weight Over Time (Shaded Region = FFT Analysis Range)", "Frequency Analysis"],
+        vertical_spacing=0.15,
+        row_heights=[0.4, 0.6]
+    )
+
+    # Add full time series of top set weight
+    fig.add_trace(
+        go.Scatter(
+            x=df_full["Day Number"],
+            y=df_full["Top Set Weight"],
+            mode='lines+markers',
+            name='Top Set Weight',
+            line=dict(color='#3498db', width=2),
+            marker=dict(size=6),
+            hovertemplate=(
+                "Day: %{x}<br>"
+                "Weight: %{y} lbs<br>"
+                "<extra></extra>"
+            )
+        ),
+        row=1, col=1
+    )
+
+    # Add shaded region for selected range
+    if start_day is not None and end_day is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=[start_day, start_day, end_day, end_day],
+                y=[df_full["Top Set Weight"].min(), df_full["Top Set Weight"].max(),
+                   df_full["Top Set Weight"].max(), df_full["Top Set Weight"].min()],
+                fill="toself",
+                fillcolor="rgba(255, 255, 255, 0.1)",
+                line=dict(width=0),
+                showlegend=False,
+                hoverinfo="skip"
+            ),
+            row=1, col=1
+        )
+
+    # Get the day numbers and weights for FFT
     days = df["Day Number"].values
     weights = df["Effective Weight"].values
 
@@ -68,22 +115,22 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
     periods = 1 / fft_freqs[1:]  # Skip the DC component (frequency = 0)
     magnitudes = np.abs(fft_result)[1:]  # Skip the DC component
     
-    # Create the figure
-    fig = go.Figure()
-    
     # Add the FFT magnitude trace
-    fig.add_trace(go.Scatter(
-        x=periods,
-        y=magnitudes,
-        mode='lines',
-        name='FFT Magnitude',
-        line=dict(color='#2ecc71', width=2),
-        hovertemplate=(
-            "Period: %{x:.1f} days<br>"
-            "Magnitude: %{y:.1f}<br>"
-            "<extra></extra>"
-        )
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=periods,
+            y=magnitudes,
+            mode='lines',
+            name='FFT Magnitude',
+            line=dict(color='#2ecc71', width=2),
+            hovertemplate=(
+                "Period: %{x:.1f} days<br>"
+                "Magnitude: %{y:.1f}<br>"
+                "<extra></extra>"
+            )
+        ),
+        row=2, col=1
+    )
     
     # Add markers for notable periods (weekly, biweekly, monthly)
     notable_periods = [7, 14, 30.44]  # days
@@ -96,48 +143,71 @@ def create_fft_analysis(df: pd.DataFrame, start_day: int = None, end_day: int = 
             line_color="rgba(255, 255, 255, 0.3)",
             annotation_text=label,
             annotation_position="top",
-            annotation=dict(font=dict(color="#FFFFFF"))
+            annotation=dict(font=dict(color="#FFFFFF")),
+            row=2, col=1
         )
     
     # Update layout
-    date_range_text = f"Day {min_day} to {max_day}"
+    date_range_text = f"FFT Analysis Range: Day {min_day} to {max_day}"
     
     fig.update_layout(
         template="plotly_dark",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         title=dict(
-            text=f"Frequency Analysis of Lifting Patterns<br><sub>{date_range_text}</sub>",
+            text=f"Lifting Pattern Analysis<br><sub>{date_range_text}</sub>",
             font=dict(size=24, color="#FFFFFF"),
             x=0.5,
             xanchor='center'
         ),
-        xaxis=dict(
-            title=dict(
-                text="Period (days)",
-                font=dict(size=16, color="#FFFFFF")
-            ),
-            type="log",  # Use log scale for better visibility of different periods
-            gridcolor="rgba(255, 255, 255, 0.1)",
-            tickfont=dict(color="#FFFFFF"),
-            range=[0.7, 2.5]  # log10 range covering ~5 days to ~316 days
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Magnitude",
-                font=dict(size=16, color="#FFFFFF")
-            ),
-            gridcolor="rgba(255, 255, 255, 0.1)",
-            tickfont=dict(color="#FFFFFF"),
-            rangemode="nonnegative"
-        ),
         showlegend=False,
-        margin=dict(l=60, r=20, t=80, b=60),
+        height=800,  # Increase overall height for better subplot visibility
+        margin=dict(l=60, r=20, t=100, b=60),
         hoverlabel=dict(
             bgcolor="rgba(0,0,0,0.8)",
             font=dict(color="#FFFFFF")
         ),
         hovermode='x unified'
     )
+
+    # Update axes
+    fig.update_xaxes(
+        title_text="Day Number",
+        gridcolor="rgba(255, 255, 255, 0.1)",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(size=14, color="#FFFFFF"),
+        row=1, col=1
+    )
+    
+    fig.update_yaxes(
+        title_text="Weight (lbs)",
+        gridcolor="rgba(255, 255, 255, 0.1)",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(size=14, color="#FFFFFF"),
+        row=1, col=1
+    )
+
+    fig.update_xaxes(
+        title_text="Period (days)",
+        type="log",
+        gridcolor="rgba(255, 255, 255, 0.1)",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(size=14, color="#FFFFFF"),
+        range=[0.7, 2.5],  # log10 range covering ~5 days to ~316 days
+        row=2, col=1
+    )
+    
+    fig.update_yaxes(
+        title_text="Magnitude",
+        gridcolor="rgba(255, 255, 255, 0.1)",
+        tickfont=dict(color="#FFFFFF"),
+        title_font=dict(size=14, color="#FFFFFF"),
+        rangemode="nonnegative",
+        row=2, col=1
+    )
+
+    # Update subplot titles color
+    for annotation in fig.layout.annotations[:2]:  # Only update the subplot titles
+        annotation.update(font=dict(color="#FFFFFF", size=16))
     
     return fig
