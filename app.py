@@ -14,6 +14,7 @@ from charts.chart_5_rest_time import create_rest_time_histogram
 from charts.chart_6_day_week_time import create_day_of_week_vs_weight_with_labels
 from charts.chart_6_day_week_time import create_day_of_week_vs_time_am_pm
 from charts.chart_9_fft import create_fft_analysis
+from charts.chart_10_color_coded_histogram import create_color_coded_histogram
 
 from charts.six_multibool import create_boolean_grip_heatmap
 from charts.chart_7_1D_histograms import create_histogram_with_toggles
@@ -95,6 +96,8 @@ fig_2d_hist = create_time_vs_weight_2d(df2)
 fig_time_circular_am,fig_time_circular_pm = create_am_pm_radial_time_plots(df2)
 fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
 fig_rest_time = create_rest_time_histogram(df2)
+
+fig_color_hist = create_color_coded_histogram(df)
 
 fig_fft = create_fft_analysis(df)
 
@@ -343,6 +346,16 @@ app.layout = dbc.Container(
                     figure=fig_oneday,
                      style={"width": "100%", "height": "auto"}
                     #style={"paddingLeft": "10%", "paddingRight": "10%", "height": "700px"}
+                ),
+                width=12
+            )
+        ),
+
+        dbc.Row(
+            dbc.Col(
+                dcc.Graph(
+                    figure=fig_color_hist,
+                    style={"width": "100%", "height": "auto"}
                 ),
                 width=12
             )
