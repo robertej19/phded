@@ -255,16 +255,6 @@ app.layout = dbc.Container(
                                     className="me-3"  # Add spacing between icons
                                 ),
                                 html.A(
-                                    html.Img(
-                                        src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png",
-                                        alt="YouTube",
-                                        style={"width": "30px", "height": "30px"}
-                                    ),
-                                    href="https://www.youtube.com/channel/UC6ynxFCZgGhjlvV5C-8sJXQ",
-                                    target="_blank",
-                                    className="me-3"  # Add spacing between icons
-                                ),
-                                html.A(
                                     "Ψ",  # Greek symbol Psi
                                     href="https://superfluid.systems/",
                                     target="_blank",
