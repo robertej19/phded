@@ -511,6 +511,7 @@ dbc.Row(
 )
 
 
+
 @app.callback(
     Output("multi-scatter-graph", "figure"),
     [Input("metric-checklist", "value")]
