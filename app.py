@@ -4,6 +4,14 @@ from dash import dcc, html, Input, Output
 
 import pandas as pd
 import numpy as np
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # 2) Import specific chart modules
 from charts.chart_1_multi import create_multi_weight_scatter
@@ -54,33 +62,64 @@ if is_data_stale(LOCAL_CSV):
 else:
     df = pd.read_csv(LOCAL_CSV)
 
-df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+# Debug: initial load shape
+initial_count = len(df)
+logger.info("Loaded data: source=%s rows=%d columns=%d", LOCAL_CSV, df.shape[0], df.shape[1])
+
+# Replace deprecated applymap with trimming only object/string columns
+#df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+str_cols = df.select_dtypes(include=["object"]).columns
+if len(str_cols) > 0:
+    df[str_cols] = df[str_cols].apply(lambda s: s.str.strip())
+
 # Now filter out rows that contain either an empty string or "#VALUE!" in any column.
 mask = df.apply(lambda row: not row.astype(str).isin(["", " ", "#VALUE!"]).any(), axis=1)
 df = df[mask]
+logger.info("After trimming & masking: rows=%d (removed %d)", len(df), initial_count - len(df))
 
 # Convert some columns to numeric if they exist
 for col in ["Day Number", "Average Weight", "Top Set Weight", "Day"]:
     if col in df.columns:
+        before = df[col].notna().sum()
         df[col] = pd.to_numeric(df[col], errors="coerce")
+        after = df[col].notna().sum()
+        logger.info("Converted column '%s' to numeric: non-null before=%d after=%d", col, before, after)
 
-
-
-
+# Record shape before dropna
+shape_before_drop = df.shape
 df = df.dropna(subset=["Top Set Weight"])
+logger.info("After dropna(['Top Set Weight']): rows=%d (dropped %d)", len(df), shape_before_drop[0] - len(df))
 
-# Compute "Most Recent Lift: YxZ"
+# Compute "Most Recent Lift: YxZ" (robust to NaNs)
+most_recent_date = "N/A"
 if 'Top Set Weight' in df.columns and 'Number of Reps' in df.columns:
-    most_recent_weight = df['Top Set Weight'].iloc[-1]
-    most_recent_reps = df['Number of Reps'].iloc[-1]
-    most_recent_lift = f"{int(most_recent_weight)}lbs x{int(most_recent_reps)}"
-    most_recent_date_raw = str(df['Date'].iloc[-1])  # Ensure it's a string
-    most_recent_date = datetime.datetime.strptime(most_recent_date_raw, "%Y%m%d").strftime("%m.%d.%y")
+    valid_mask = df['Top Set Weight'].notna() & df['Number of Reps'].notna()
+    if valid_mask.any():
+        last = df.loc[valid_mask].iloc[-1]
+        most_recent_weight = last['Top Set Weight']
+        most_recent_reps = last['Number of Reps']
+        try:
+            most_recent_lift = f"{int(most_recent_weight)}lbs x{int(most_recent_reps)}"
+        except (ValueError, TypeError):
+            most_recent_lift = "N/A"
+        most_recent_date_raw = last.get('Date', None)
+        if pd.notna(most_recent_date_raw):
+            try:
+                most_recent_date = pd.to_datetime(str(most_recent_date_raw), format="%Y%m%d").strftime("%m.%d.%y")
+            except Exception:
+                try:
+                    most_recent_date = pd.to_datetime(most_recent_date_raw).strftime("%m.%d.%y")
+                except Exception:
+                    most_recent_date = str(most_recent_date_raw)
+    else:
+        most_recent_lift = "N/A"
+        most_recent_date = "N/A"
 else:
     most_recent_lift = "N/A"
-# Compute "Total Weight Lifted: W"
+    most_recent_date = "N/A"
+# Compute "Total Weight Lifted: W" (ignore NaNs)
 if 'Top Set Weight' in df.columns and 'Number of Reps' in df.columns:
-    total_weight_lifted = int((df['Top Set Weight'] * df['Number of Reps']).sum())
+    total_weight_lifted = int((df['Top Set Weight'].fillna(0) * df['Number of Reps'].fillna(0)).sum())
 else:
     total_weight_lifted = "N/A"
 
@@ -92,12 +131,31 @@ fig_bool = create_boolean_grip_heatmap(df)
 fig_oneday = create_histogram_with_toggles(df)
 df2 = df.dropna(subset=["Time"])
 
+logger.info("df for time-based charts (df2): rows=%d (original df rows=%d)", len(df2), len(df))
+
 fig_2d_hist = create_time_vs_weight_2d(df2)
 fig_time_circular_am,fig_time_circular_pm = create_am_pm_radial_time_plots(df2)
 fig_day_vs_time_of_day = create_day_vs_time_of_day(df2)
 fig_rest_time = create_rest_time_histogram(df2)
 
-fig_color_hist = create_color_coded_histogram(df)
+# Wrap the color-coded histogram creation with diagnostics
+try:
+    logger.info("Creating color-coded histogram with df rows=%d", len(df))
+    fig_color_hist = create_color_coded_histogram(df)
+except Exception as exc:
+    logger.exception("create_color_coded_histogram failed: %s", exc)
+    # Dump a small debug CSV and a short summary to help diagnose
+    debug_csv = "debug_df_before_color_hist.csv"
+    df.to_csv(debug_csv, index=False)
+    logger.info("Wrote debug CSV: %s (rows=%d)", debug_csv, len(df))
+    # Provide a fallback empty figure so the app can continue to run
+    import plotly.graph_objects as go
+    fig_color_hist = go.Figure()
+    fig_color_hist.add_annotation(
+        text=f"Error creating color histogram: {exc}",
+        xref="paper", yref="paper", x=0.5, y=0.5,
+        showarrow=False, font=dict(color="#FFFFFF")
+    )
 
 fig_fft = create_fft_analysis(df)
 
@@ -528,4 +586,4 @@ def update_fft_plot(day_range):
 #    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8050))
-    app.run_server(debug=False, host="0.0.0.0", port=port)
+    app.run(debug=False, host="0.0.0.0", port=port)
