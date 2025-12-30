@@ -1,7 +1,6 @@
 import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime, timedelta
-import plotly.colors
 
 def create_color_coded_histogram(df):
     """
@@ -19,19 +18,6 @@ def create_color_coded_histogram(df):
     latest_date = datetime.now().date()
     days_ago = [(latest_date - date).days for date in dates]
     
-    # Calculate color ratios (days_ago / max_days) and invert them
-    max_days = max(days_ago)
-    color_ratios = [1 - (d/max_days) for d in days_ago]  # Invert the ratio
-    
-    # Create a continuous color scale from viridis
-    colors = [
-        plotly.colors.sample_colorscale(
-            'Viridis', 
-            ratio, 
-            colortype='rgb'
-        )[0] for ratio in color_ratios
-    ]
-    
     # Group by Top Set weight to determine stacking
     weight_counts = df['Top Set Weight'].value_counts().sort_index()
     
@@ -40,8 +26,6 @@ def create_color_coded_histogram(df):
     y_positions = []
     dates_list = []
     days_ago_list = []
-    ratios_list = []
-    colors_list = []
     reps_list = []
     
     # For each unique weight, create stacked unit bars
@@ -50,8 +34,6 @@ def create_color_coded_histogram(df):
         mask = df['Top Set Weight'] == weight
         weight_dates = [d for d, m in zip(dates, mask) if m]
         weight_days_ago = [d for d, m in zip(days_ago, mask) if m]
-        weight_ratios = [r for r, m in zip(color_ratios, mask) if m]
-        weight_colors = [c for c, m in zip(colors, mask) if m]
         weight_reps = [r for r, m in zip(df['Number of Reps'], mask) if m]
         
         # Add a unit bar for each occurrence
@@ -60,38 +42,44 @@ def create_color_coded_histogram(df):
             y_positions.append(1)  # Stack from bottom up
             dates_list.append(weight_dates[i])
             days_ago_list.append(weight_days_ago[i])
-            ratios_list.append(weight_ratios[i])
-            colors_list.append(weight_colors[i])
             reps_list.append(weight_reps[i])
     
     # Create the figure
     fig = go.Figure()
     
     # Add bars for each day's Top Set weight
+    # Use days_ago_list directly with reversed Viridis so recent dates (low days_ago) are bright
+    max_days = max(days_ago_list) if days_ago_list else 1
+    min_days = min(days_ago_list) if days_ago_list else 0
+    
     fig.add_trace(
         go.Bar(
             x=weights,
             y=y_positions,
-            customdata=list(zip(dates_list, days_ago_list, ratios_list, reps_list)),
+            customdata=list(zip(dates_list, days_ago_list, reps_list)),
             marker=dict(
-                color=colors_list,
+                color=days_ago_list,
+                colorscale='Viridis_r',  # Reversed so recent (low) = bright, old (high) = dark
+                cmin=min_days,
+                cmax=max_days,
                 line=dict(
-                    color=colors_list,
+                    color=days_ago_list,
+                    colorscale='Viridis_r',
+                    cmin=min_days,
+                    cmax=max_days,
                     width=1
                 ),
                 colorbar=dict(
-                    title='Days Ago Ratio',
+                    title='Days Ago',
                     titleside='right',
-                    tickformat='.2%'  # Format as percentage
-                ),
-                colorscale='Viridis'
+                    tickformat='d'  # Format as integer (days)
+                )
             ),
             hovertemplate=(
                 'Top Set Weight: %{x:.0f} lbs<br>'
-                'Reps: %{customdata[3]:.0f}<br>'
+                'Reps: %{customdata[2]:.0f}<br>'
                 'Date: %{customdata[0]}<br>'
                 'Days Ago: %{customdata[1]:.0f}<br>'
-                'Time Ratio: %{customdata[2]:.1%}<br>'
                 '<extra></extra>'
             ),
             width=5  # Make bars thinner for better visualization
@@ -123,11 +111,13 @@ def create_color_coded_histogram(df):
     # Update axes formatting
     fig.update_xaxes(
         title_font=dict(size=20, color="#FFFFFF"),
-        tickfont=dict(size=16, color="#FFFFFF")
+        tickfont=dict(size=16, color="#FFFFFF"),
+        range=[400, None]  # Lower weight bound of 400 lbs
     )
     fig.update_yaxes(
         title_font=dict(size=20, color="#FFFFFF"),
-        tickfont=dict(size=16, color="#FFFFFF")
+        tickfont=dict(size=16, color="#FFFFFF"),
+        type='log'  # Use logarithmic scale for y-axis
     )
     
     return fig

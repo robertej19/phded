@@ -115,9 +115,13 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
     trace_top = go.Scatter(
         x=xvals,
         y=df["Top Set Weight"],
-        mode="lines",
+        mode="markers",
         name="Top Set Weight",
-        marker=dict(opacity=1),
+        marker=dict(
+            opacity=1,
+            color=colors,
+            showscale=False
+        ),
         text=custom_hover,
         hovertemplate=(
             "%{x|%B %d %Y}<br>"
@@ -198,7 +202,8 @@ def create_multi_weight_scatter(df: pd.DataFrame) -> go.Figure:
             tickfont=dict(
                 size=16,      # Larger tick labels
                 color="#FFFFFF"
-            )
+            ),
+            range=[400, None]  # Lower weight bound of 400 lbs
         ),
         yaxis2=dict(
             title=dict(

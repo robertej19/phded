@@ -20,6 +20,36 @@ def create_histogram_with_toggles(df):
     # Metrics that require x-axis limits to be set to 400-600
     metrics_with_custom_xlim = {"Top Set Weight", "Average Weight", "Effective Weight"}
 
+    # Calculate max y values for each metric to set dynamic y-axis ranges
+    max_y_values = {}
+    for m in metrics:
+        col_name = m["col"]
+        if col_name not in df.columns:
+            continue
+        
+        if col_name == "Number of Reps":
+            # For Number of Reps, use the same binning logic
+            data = df[col_name]
+            bin_min = int(data.min())
+            bin_max = int(data.max())
+            bin_edges = list(range(bin_min, bin_max + 2))
+            counts, _ = np.histogram(data, bins=bin_edges)
+            max_y_values[m["label"]] = max(counts) if len(counts) > 0 else 1
+        else:
+            # For weight metrics, compute histogram
+            data = df[col_name].dropna()
+            if len(data) > 0:
+                if col_name in ["Top Set Weight", "Effective Weight"]:
+                    # Use 10 lb bins for Top Set Weight and Effective Weight
+                    bin_edges = np.arange(400, 601, 10)  # 400 to 600 in 10 lb steps
+                    counts, _ = np.histogram(data, bins=bin_edges)
+                else:
+                    # For Average Weight, use 20 bins
+                    counts, _ = np.histogram(data, bins=20)
+                max_y_values[m["label"]] = max(counts) if len(counts) > 0 else 1
+            else:
+                max_y_values[m["label"]] = 1
+
     # 2) Create a trace for each metric
     fig = go.Figure()
 
@@ -56,16 +86,29 @@ def create_histogram_with_toggles(df):
         else:
             # For the other metrics, use a Histogram trace with a standard hover template
             hover_template = "%{x:.0f} lbs<br>%{y:.0f} lifts<extra></extra>"
-            fig.add_trace(
-                go.Histogram(
-                    x=df[col_name],
-                    name=m["label"],
-                    visible=True if i == 0 else False,  # Show only the first trace by default
-                    opacity=0.6,  # Slight transparency so overlapping histograms can be seen
-                    nbinsx=20,    # Set number of bins
-                    hovertemplate=hover_template,
-                )
-            )
+            
+            # Set bin size to 10 lbs for Top Set Weight and Effective Weight
+            if col_name in ["Top Set Weight", "Effective Weight"]:
+                xbins = dict(start=400, end=600, size=10)
+            else:
+                # For Average Weight, use number of bins
+                xbins = None
+                nbinsx = 20
+            
+            histogram_kwargs = {
+                "x": df[col_name],
+                "name": m["label"],
+                "visible": True if i == 0 else False,
+                "opacity": 0.6,
+                "hovertemplate": hover_template,
+            }
+            
+            if xbins:
+                histogram_kwargs["xbins"] = xbins
+            else:
+                histogram_kwargs["nbinsx"] = nbinsx
+            
+            fig.add_trace(go.Histogram(**histogram_kwargs))
 
     # 3) Create updatemenus (buttons) for toggling traces
     buttons = []
@@ -81,13 +124,17 @@ def create_histogram_with_toggles(df):
         }
 
         # Set custom x- and y-axis ranges for certain metrics
+        # Calculate dynamic y-axis max with 10% padding
+        max_y = max_y_values.get(m["label"], 100)
+        y_max = max_y * 1.1  # Add 10% padding above the max value
+        
         if m["label"] in metrics_with_custom_xlim:
             layout_updates["xaxis.range"] = [400, 600]
-            layout_updates["yaxis.range"] = [0, 180]
+            layout_updates["yaxis.range"] = [0, y_max]
         else:
             # Default ranges for other metrics
             layout_updates["xaxis.range"] = [0, 10]
-            layout_updates["yaxis.range"] = [0, 500]
+            layout_updates["yaxis.range"] = [0, y_max]
 
         buttons.append(
             dict(
