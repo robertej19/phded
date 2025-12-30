@@ -88,7 +88,7 @@ def create_color_coded_histogram(df):
     
     fig.update_layout(
         title=dict(
-            text='Top Set Weight Distribution (Color by Days Ago)',
+            text='Top Set Weight Distribution',
             x=0.5,
             xanchor='center'
         ),
